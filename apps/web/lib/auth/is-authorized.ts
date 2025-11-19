@@ -2,16 +2,15 @@ import { Session } from 'next-auth';
 import { NextRequest } from 'next/server';
 
 /**
- * Determines whether a user is authorized to access a specific route.
- *
- * - Allows unrestricted access to static assets like `/assets` and `/favicon.ico`.
- * - Redirects unauthenticated users trying to access protected routes to `/auth/sign-in`.
- * - Redirects authenticated users who haven't verified their email to `/auth/confirm-email`.
- * - Redirects verified users away from auth pages (like `/auth/sign-in`) to the homepage.
- *
- * @param request - The incoming request object containing the target route.
- * @param auth - The current session object or null if unauthenticated.
- * @returns A `Response` redirect object if redirection is needed, or `true` if access is allowed.
+ * @description 判断用户是否有权访问特定路由
+ * @param request - 包含目标路由的传入请求对象
+ * @param auth - 当前会话对象，如果未认证则为 null
+ * @returns 如果需要重定向则返回 Response 重定向对象，如果允许访问则返回 true
+ * @remarks
+ * - 允许无限制访问静态资源，如 `/assets` 和 `/favicon.ico`
+ * - 将尝试访问受保护路由的未认证用户重定向到 `/auth/sign-in`
+ * - 将未验证邮箱的已认证用户重定向到 `/auth/confirm-email`
+ * - 将已验证邮箱的用户从认证页面（如 `/auth/sign-in`）重定向到首页
  */
 export const isAuthorized = ({
   request,

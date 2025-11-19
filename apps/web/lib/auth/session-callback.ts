@@ -3,11 +3,11 @@ import { AdapterSession, AdapterUser } from 'next-auth/adapters';
 import { JWT } from 'next-auth/jwt';
 
 /**
- * Maps the JWT token data to the NextAuth session object.
- *
- * @param session - The current session object.
- * @param token - The JWT token containing user information.
- * @returns The updated session with detailed user data from the token.
+ * @description 将 JWT 令牌数据映射到 NextAuth 会话对象
+ * @param session - 当前会话对象
+ * @param token - 包含用户信息的 JWT 令牌
+ * @returns 包含令牌中详细用户数据的更新后的会话对象
+ * @remarks 如果令牌中包含用户信息，则将其合并到会话对象中
  */
 export const sessionCallback = ({
   session,

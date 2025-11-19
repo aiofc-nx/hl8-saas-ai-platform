@@ -2,13 +2,17 @@ import z, { ZodSchema } from 'zod';
 import { env } from './env';
 
 /**
- * Fetch data from API and validate the response using a Zod schema.
- *
- * @template T - Zod schema type
- * @param {T} schema - Zod schema to validate the response data
- * @param {URL | RequestInfo} url - API endpoint (relative to env.API_URL)
- * @param {RequestInit} [init] - Optional fetch init options
- * @returns {Promise<[string | null, z.TypeOf<T> | null]>} - Returns a tuple of [errorMessage, validatedData]
+ * @description 从 API 获取数据并使用 Zod 模式验证响应
+ * @template T - Zod 模式类型
+ * @param schema - 用于验证响应数据的 Zod 模式
+ * @param url - API 端点（相对于 env.API_URL）
+ * @param init - 可选的 fetch 初始化选项
+ * @returns 返回元组 [errorMessage, validatedData]，第一个元素为错误信息（成功时为 null），第二个元素为验证后的数据（失败时为 null）
+ * @throws 当网络请求失败时会返回包含错误信息的元组
+ * @remarks
+ * - 自动处理空响应、HTML 响应和 JSON 解析错误
+ * - 支持 NestJS ValidationPipe 返回的错误格式
+ * - 验证失败时会在控制台输出详细的验证错误信息
  */
 export const safeFetch = async <T extends ZodSchema<unknown>>(
   schema: T,

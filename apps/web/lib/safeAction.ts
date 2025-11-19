@@ -2,14 +2,13 @@ import { createSafeActionClient } from 'next-safe-action';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 
 /**
- * Creates a safe action client for server actions with centralized error handling.
- *
+ * @description 创建用于服务器动作的安全动作客户端，提供集中式错误处理
  * @constant
- *
- * This client wraps server actions to provide safe error handling.
- * When an error occurs in any server action, it will be caught and logged to the console.
- * The error message will be returned as the result of the action to allow graceful handling on the client side.
- * RedirectError is re-thrown to allow Next.js to handle redirects properly.
+ * @remarks
+ * - 包装服务器动作以提供安全的错误处理机制
+ * - 当服务器动作中发生错误时，会被捕获并记录到控制台
+ * - 错误信息将作为动作结果返回，允许客户端优雅地处理错误
+ * - RedirectError 会被重新抛出，以允许 Next.js 正确处理重定向
  */
 export const safeAction = createSafeActionClient({
   handleServerError(e) {

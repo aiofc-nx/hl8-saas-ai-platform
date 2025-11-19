@@ -4,16 +4,15 @@ import { AdapterUser } from 'next-auth/adapters';
 import { JWT } from 'next-auth/jwt';
 
 /**
- * Handles the JWT callback in NextAuth to customize the token payload.
- *
- * When triggered by "update", merges the session user data into the existing token.
- * When triggered by "signIn", initializes the token with detailed user information.
- *
- * @param token - The current JWT token.
- * @param user - The user object returned on sign-in or adapter user.
- * @param trigger - The trigger event, e.g. 'signIn' or 'update'.
- * @param session - The current session data.
- * @returns The updated JWT token.
+ * @description 处理 NextAuth 中的 JWT 回调，用于自定义令牌负载
+ * @param token - 当前 JWT 令牌
+ * @param user - 登录时返回的用户对象或适配器用户对象
+ * @param trigger - 触发事件，例如 'signIn' 或 'update'
+ * @param session - 当前会话数据
+ * @returns 更新后的 JWT 令牌
+ * @remarks
+ * - 当触发类型为 "update" 时，将会话用户数据合并到现有令牌中
+ * - 当触发类型为 "signIn" 时，使用详细的用户信息初始化令牌
  */
 export const jwtCallback = ({
   token,

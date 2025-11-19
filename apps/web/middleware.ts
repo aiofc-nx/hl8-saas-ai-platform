@@ -6,11 +6,15 @@ import {
 } from '@/server/auth.server';
 import { auth } from './auth';
 
+/**
+ * @description Next.js 中间件，用于处理请求前的认证和会话管理
+ * @remarks
+ * - 在每次请求保护路由前，检查并刷新访问令牌（如需要）
+ * - 验证服务器端会话是否有效
+ * @param req - 请求对象，包含认证信息和用户数据
+ */
 export default auth(async (req) => {
-  /**
-   * @description Refresh Access Token if needed before each request to the protected routes in the application.
-   * @param req
-   */
+  // 刷新访问令牌（如需要）
   if (req.auth && req.auth.user) {
     const user = req.auth.user;
     const session_refresh_time = new Date(
@@ -18,19 +22,24 @@ export default auth(async (req) => {
     ).getTime();
     const now = new Date().getTime();
     if (session_refresh_time <= now) {
-      console.log('========== Refresh Access Token Started =========');
+      console.log('========== 刷新访问令牌开始 =========');
       await refreshAccessToken(user);
-      console.log('========== Refresh Access Token Ended =========');
+      console.log('========== 刷新访问令牌结束 =========');
     }
   }
+  // 验证服务器端会话
   if (req.auth && req.auth.user) {
-    console.log(`========== Validate Server Session Started =========`);
+    console.log(`========== 验证服务器会话开始 =========`);
     await validateSessionIfExist();
-    console.log('========== Validate Server Session Ended =========');
+    console.log('========== 验证服务器会话结束 =========');
   }
 });
 
+/**
+ * @description 中间件配置
+ * @remarks 配置中间件匹配规则，排除 API 路由、静态资源和图片文件
+ * @see https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
+ */
 export const config = {
-  // https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
   matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
 };

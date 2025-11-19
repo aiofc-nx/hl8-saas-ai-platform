@@ -28,8 +28,10 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { redirect } from 'next/navigation';
 
 /**
- * Parses and sends credential-based login with device info to backend.
- * @param credentials
+ * @description 解析并发送基于凭证的登录请求（包含设备信息）到后端
+ * @param credentials - 登录凭证对象，包含标识符（邮箱或用户名）和密码
+ * @returns 返回用户对象，如果登录失败则返回 null
+ * @throws 如果网络请求失败或响应数据格式错误，会在控制台输出错误信息并返回 null
  */
 export const authorizeSignIn = async (
   credentials: SignIn,
@@ -82,8 +84,15 @@ export const authorizeSignIn = async (
 };
 
 /**
- * UI Sign-in action using credentials.
+ * @description 使用凭证进行 UI 登录操作的服务器动作
  * @schema SignInSchema
+ * @remarks
+ * - 先验证用户凭证并获取用户信息
+ * - 根据邮箱验证状态进行相应重定向
+ * - 未验证邮箱的用户重定向到邮箱确认页面
+ * - 已验证邮箱的用户重定向到首页
+ * @throws {Error} 当凭证无效时抛出 "Invalid credentials." 错误
+ * @throws {AuthError} 当认证过程中出现错误时抛出相应的认证错误
  */
 export const signInWithCredentials = safeAction
   .schema(SignInSchema)
@@ -126,8 +135,14 @@ export const signInWithCredentials = safeAction
   });
 
 /**
- * UI Sign-up action with auto login.
+ * @description 用户注册服务器动作，注册成功后自动登录
  * @schema SignUpSchema
+ * @remarks
+ * - 发送注册请求到后端
+ * - 注册成功后自动使用注册的邮箱和密码登录
+ * - 重定向到邮箱确认页面
+ * @throws {Error} 当注册失败时抛出相应的错误信息
+ * @throws {AuthError} 当自动登录失败时抛出相应的认证错误
  */
 export const signUpWithCredentials = safeAction
   .schema(SignUpSchema)
@@ -187,8 +202,10 @@ export const signUpWithCredentials = safeAction
   });
 
 /**
- * Sign out a device by session token.
- * @param token
+ * @description 通过会话令牌登出指定设备
+ * @param token - 会话令牌字符串
+ * @throws {string} 当登出请求失败时抛出错误信息
+ * @remarks 此函数为内部函数，用于登出操作的核心逻辑
  */
 const signOutBySessionToken = async (token: string) => {
   const session = await auth();
@@ -209,7 +226,12 @@ const signOutBySessionToken = async (token: string) => {
 };
 
 /**
- * Sign out from current device.
+ * @description 登出当前设备的服务器动作
+ * @returns 返回 'success' 字符串表示登出成功
+ * @remarks
+ * - 获取当前会话并使用会话令牌登出
+ * - 登出后重定向到首页
+ * @throws {Error} 当登出请求失败时抛出错误
  */
 export const signOutCurrentDevice = safeAction.action(async () => {
   const session = await auth();
@@ -222,8 +244,11 @@ export const signOutCurrentDevice = safeAction.action(async () => {
 });
 
 /**
- * Sign out from a different device by session token.
+ * @description 通过会话令牌登出其他设备的服务器动作
  * @schema SignOutSchema
+ * @returns 返回 'success' 字符串表示登出成功
+ * @throws {Error} 当登出请求失败时抛出错误
+ * @remarks 用于在账户管理页面远程登出其他设备
  */
 export const signOutOtherDevice = safeAction
   .schema(SignOutSchema)
@@ -233,7 +258,11 @@ export const signOutOtherDevice = safeAction
   });
 
 /**
- * Sign out from all devices.
+ * @description 登出所有设备的服务器动作
+ * @remarks
+ * - 发送登出所有设备的请求到后端
+ * - 登出成功后重定向到首页
+ * @throws {Error} 当登出请求失败时抛出错误
  */
 export const signOutAllDevice = safeAction.action(async () => {
   const session = await auth();
@@ -259,8 +288,13 @@ export const signOutAllDevice = safeAction.action(async () => {
 });
 
 /**
- * Change password for the current user.
+ * @description 修改当前用户密码的服务器动作
  * @schema ChangePasswordSchema
+ * @returns 返回修改密码操作的响应数据
+ * @throws {Error} 当修改密码请求失败时抛出错误
+ * @remarks
+ * - 从解析后的输入中移除确认新密码字段（仅用于前端验证）
+ * - 使用当前用户的邮箱作为标识符
  */
 export const changePassword = safeAction
   .schema(ChangePasswordSchema)
@@ -291,7 +325,10 @@ export const changePassword = safeAction
   });
 
 /**
- * Resend confirmation email.
+ * @description 重新发送邮箱确认邮件的服务器动作
+ * @returns 返回发送邮件的响应数据
+ * @throws {Error} 当用户邮箱不存在或发送邮件失败时抛出错误
+ * @remarks 使用当前会话中的用户邮箱发送确认邮件
  */
 export const resendConfirmationEmail = safeAction.action(async () => {
   const session = await auth();
@@ -318,8 +355,12 @@ export const resendConfirmationEmail = safeAction.action(async () => {
 });
 
 /**
- * Send forgot password email.
+ * @description 发送忘记密码邮件的服务器动作
  * @schema ForgotPasswordSchema
+ * @remarks
+ * - 发送密码重置邮件到指定邮箱
+ * - 成功后重定向到重置密码页面，并携带邮箱和成功消息参数
+ * @throws {Error} 当发送邮件失败时抛出错误
  */
 export const forgotPassword = safeAction
   .schema(ForgotPasswordSchema)
@@ -358,8 +399,12 @@ export const forgotPassword = safeAction
   });
 
 /**
- * Reset password using token.
+ * @description 使用重置令牌重置密码的服务器动作
  * @schema ResetPasswordSchema
+ * @remarks
+ * - 使用提供的重置令牌和新密码重置用户密码
+ * - 成功后重定向到登录页面
+ * @throws {Error} 当重置密码请求失败时抛出错误
  */
 export const resetPassword = safeAction
   .schema(ResetPasswordSchema)
@@ -396,8 +441,12 @@ export const resetPassword = safeAction
   });
 
 /**
- * Get current session by token.
+ * @description 通过当前会话的会话令牌获取会话详情
  * @schema GetSessionSchema
+ * @returns 返回会话数据或错误信息的元组
+ * @remarks
+ * - 使用当前会话的会话令牌查询会话详情
+ * - 响应缓存 24 小时，使用标签 'next-auth-session' 进行重新验证
  */
 export const getSessionById = async () => {
   const session = await auth();
@@ -417,7 +466,11 @@ export const getSessionById = async () => {
 };
 
 /**
- * Get all active sessions for the user.
+ * @description 获取当前用户的所有活跃会话
+ * @returns 返回会话数组，如果请求失败则返回空数组
+ * @remarks
+ * - 使用当前用户的 ID 查询所有活跃会话
+ * - 响应缓存 1 小时，使用标签 'nest-auth-sessions' 进行重新验证
  */
 export const getAuthSessions = async (): Promise<Session[]> => {
   const session = await auth();
@@ -441,8 +494,13 @@ export const getAuthSessions = async (): Promise<Session[]> => {
 };
 
 /**
- * Confirm email with token
+ * @description 使用令牌确认邮箱的服务器动作
  * @schema ConfirmEmailSchema
+ * @remarks
+ * - 发送确认邮箱请求到后端
+ * - 成功后更新会话中的邮箱验证状态
+ * - 重定向到首页
+ * @throws {Error} 当确认邮箱请求失败时抛出错误
  */
 export const confirmEmail = safeAction
   .schema(ConfirmEmailSchema)
@@ -472,8 +530,9 @@ export const confirmEmail = safeAction
   });
 
 /**
- * Update tokens in auth session
- * @param data
+ * @description 更新认证会话中的令牌信息
+ * @param data - 刷新令牌响应数据，包含新的访问令牌、刷新令牌、会话令牌和刷新时间
+ * @remarks 此函数为内部函数，用于更新 NextAuth 会话中的令牌数据
  */
 const updateTokens = async (data: RefreshToken) => {
   await update({
@@ -489,8 +548,13 @@ const updateTokens = async (data: RefreshToken) => {
 };
 
 /**
- * Refresh access token with refresh token
- * @param user
+ * @description 使用刷新令牌刷新访问令牌
+ * @param user - 当前用户对象，包含令牌信息
+ * @returns 返回刷新结果，如果失败则返回 undefined
+ * @remarks
+ * - 当访问令牌过期时，使用刷新令牌获取新的访问令牌
+ * - 成功后更新会话中的令牌信息
+ * - 如果刷新失败，会在控制台输出错误信息
  */
 export const refreshAccessToken = async (user: User): Promise<unknown> => {
   const [error, data] = await safeFetch(
@@ -518,7 +582,12 @@ export const refreshAccessToken = async (user: User): Promise<unknown> => {
 };
 
 /**
- * Validate session if exist from server session
+ * @description 验证服务器端会话是否存在且有效
+ * @returns 返回会话数据
+ * @remarks
+ * - 如果验证失败（会话不存在或已过期），会自动登出用户
+ * - 验证成功会在控制台输出成功信息
+ * @throws 当会话验证失败时，会自动执行登出操作
  */
 export const validateSessionIfExist = async (): Promise<GetSession> => {
   const [error, data] = await getSessionById();
@@ -533,10 +602,12 @@ export const validateSessionIfExist = async (): Promise<GetSession> => {
 };
 
 /**
- * Delete account
+ * @description 删除用户账户的服务器动作
  * @schema DeleteAccountSchema
- * @param parsedInput
- * @returns Promise<MessageResponse>
+ * @remarks
+ * - 需要提供用户密码以确认删除操作
+ * - 删除成功后重定向到登录页面
+ * @throws {Error} 当删除账户请求失败时抛出错误
  */
 export const deleteAccount = safeAction
   .schema(DeleteAccountSchema)

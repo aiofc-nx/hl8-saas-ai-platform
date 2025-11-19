@@ -12,9 +12,9 @@ type DeviceInfo = {
 };
 
 /**
- * Fetches the IP address and approximate location using the ipinfo.io API.
- *
- * @returns An object containing `ip` and `location` (city/region).
+ * @description 使用 ipinfo.io API 获取 IP 地址和大致位置
+ * @returns 返回包含 `ip` 和 `location`（城市/地区）的对象
+ * @remarks 如果请求失败，则返回 'unknown' 作为默认值
  */
 export const getLocationFromIp = async (): Promise<{
   ip: string;
@@ -30,11 +30,9 @@ export const getLocationFromIp = async (): Promise<{
 };
 
 /**
- * Parses device and browser information from the User-Agent header,
- * and enriches it with IP and location data.
- *
- * @returns A `DeviceInfo` object containing device type, OS, name,
- * browser, IP address, location, and the full user-agent string.
+ * @description 从 User-Agent 请求头解析设备和浏览器信息，并用 IP 和位置数据丰富信息
+ * @returns 返回包含设备类型、操作系统、设备名称、浏览器、IP 地址、位置和完整 User-Agent 字符串的 `DeviceInfo` 对象
+ * @remarks 使用 UAParser 库解析 User-Agent，并调用 getLocationFromIp 获取位置信息
  */
 export const getDeviceInfo = async (): Promise<DeviceInfo> => {
   const header = await headers();
