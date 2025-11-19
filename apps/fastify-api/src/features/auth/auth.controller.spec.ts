@@ -1,24 +1,29 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
+import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
+import { User } from '@/features/users/entities/user.entity';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
-import { Session } from './entities/session.entity';
 import {
-  CreateUserDto,
-  SignInUserDto,
-  SignOutUserDto,
-  SignOutAllDeviceUserDto,
-  ConfirmEmailDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
   ChangePasswordDto,
-  RefreshTokenDto,
+  ConfirmEmailDto,
+  CreateUserDto,
   DeleteUserDto,
+  ForgotPasswordDto,
+  RefreshTokenDto,
+  ResetPasswordDto,
+  SignInUserDto,
+  SignOutAllDeviceUserDto,
+  SignOutUserDto,
 } from './dto';
-import { User } from '@/features/users/entities/user.entity';
+import { Session } from './entities/session.entity';
+
+// Mock @repo/constants/app 模块
+jest.mock('@repo/constants/app', () => ({
+  APP_NAME: 'Test App',
+}));
 
 /**
  * AuthController 的单元测试套件。
@@ -361,4 +366,3 @@ describe('AuthController', () => {
     });
   });
 });
-

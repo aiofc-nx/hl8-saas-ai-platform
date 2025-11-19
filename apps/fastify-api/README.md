@@ -33,6 +33,8 @@ DB_SSL=false
 MAIL_HOST=smtp.example.com
 MAIL_USERNAME=your-email@example.com
 MAIL_PASSWORD=your-email-password
+MAIL_PORT=587
+MAIL_SECURE=false
 
 # 文件存储配置
 FILE_SYSTEM=public
@@ -62,9 +64,11 @@ AWS_S3_ENDPOINT=
 - `DB_PASSWORD`: PostgreSQL 数据库密码
 - `DB_NAME`: PostgreSQL 数据库名称
 - `DB_SSL`: 是否启用 SSL 连接（true/false，默认：false）
-- `MAIL_HOST`: SMTP 邮件服务器地址
-- `MAIL_USERNAME`: 邮件服务用户名
-- `MAIL_PASSWORD`: 邮件服务密码
+- `MAIL_HOST`: SMTP 邮件服务器地址或预定义服务名（如 'gmail', 'outlook'）。如果使用预定义服务名，系统会自动配置连接参数；否则需要提供完整的 SMTP 服务器地址（如 'smtp.gmail.com'）
+- `MAIL_USERNAME`: 邮件服务用户名（通常是邮箱地址）
+- `MAIL_PASSWORD`: 邮件服务密码或应用专用密码
+- `MAIL_PORT`: SMTP 端口号（可选，默认 587）。通常 587 用于 STARTTLS，465 用于 SSL/TLS
+- `MAIL_SECURE`: 是否使用安全连接（可选，默认 false）。587 端口通常为 false，465 端口为 true
 - `FILE_SYSTEM`: 文件存储系统（'s3' 或 'public'）
 - `FILE_MAX_SIZE`: 最大文件大小（字节，默认 20MB）
 - `AWS_*`: AWS S3 相关配置（仅在 FILE_SYSTEM=s3 时需要）
@@ -108,3 +112,23 @@ pnpm run migration:fresh
 - 生产环境建议手动运行迁移，而不是依赖自动迁移
 - 迁移文件会自动生成，但建议检查生成的 SQL 语句
 - 确保在运行迁移前备份数据库
+
+## 邮件服务测试
+
+### 快速测试
+
+使用测试脚本验证邮件配置：
+
+```bash
+# 发送测试邮件到指定邮箱
+pnpm test:email your-email@example.com
+```
+
+### 详细配置指南
+
+请参考 [邮件服务配置指南](./docs/EMAIL_CONFIGURATION.md) 获取：
+
+- 常见邮件服务商的详细配置方法（Gmail、Outlook、QQ、163 等）
+- 生产环境测试步骤
+- 故障排查指南
+- 安全建议和最佳实践

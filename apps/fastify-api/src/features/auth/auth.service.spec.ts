@@ -1,35 +1,35 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import * as utils from '@/common/utils';
+import { TransactionService } from '@/database';
+import { MailService } from '@/features/mail/mail.service';
+import { Profile } from '@/features/users/entities/profile.entity';
+import { User } from '@/features/users/entities/user.entity';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from 'nestjs-pino';
 import { AuthService } from './auth.service';
-import { TransactionService } from '@/database';
-import { MailService } from '@/features/mail/mail.service';
-import { User } from '@/features/users/entities/user.entity';
-import { Profile } from '@/features/users/entities/profile.entity';
-import { Session } from './entities/session.entity';
-import { Otp, TokenTypes } from './entities/otp.entity';
 import {
-  CreateUserDto,
-  SignInUserDto,
-  ValidateUserDto,
   ConfirmEmailDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  ChangePasswordDto,
+  CreateUserDto,
   RefreshTokenDto,
+  SignInUserDto,
   SignOutUserDto,
-  SignOutAllDeviceUserDto,
-  DeleteUserDto,
+  ValidateUserDto,
 } from './dto';
-import * as utils from '@/common/utils';
+import { Otp, TokenTypes } from './entities/otp.entity';
+import { Session } from './entities/session.entity';
+
+// Mock @repo/constants/app 模块
+jest.mock('@repo/constants/app', () => ({
+  APP_NAME: 'Test App',
+}));
 
 // Mock 工具函数
 jest.mock('@/common/utils', () => ({
@@ -648,4 +648,3 @@ describe('AuthService', () => {
     });
   });
 });
-

@@ -8,7 +8,7 @@ import { z } from 'zod';
  * - CORS 配置（ALLOW_CORS_URL）
  * - JWT 配置（访问令牌和刷新令牌的密钥和过期时间）
  * - 数据库配置（PostgreSQL 连接信息）
- * - 邮件服务配置
+ * - 邮件服务配置（SMTP 服务器、端口、安全连接等）
  * - 文件存储配置（本地或 S3）
  * - AWS S3 配置（如果使用 S3 存储）
  */
@@ -32,6 +32,11 @@ export const EnvSchema = z.object({
   MAIL_HOST: z.string(),
   MAIL_USERNAME: z.string(),
   MAIL_PASSWORD: z.string(),
+  MAIL_PORT: z.coerce.number().default(587),
+  MAIL_SECURE: z
+    .string()
+    .default('false')
+    .transform((value) => value === 'true'),
   FILE_SYSTEM: z.enum(['s3', 'public']),
   FILE_MAX_SIZE: z.coerce.number().default(20971520),
   AWS_REGION: z.string().default(''),

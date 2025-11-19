@@ -10,5 +10,7 @@ export default {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^@repo/constants/app$': '<rootDir>/../../../packages/constants/app.ts',
   },
+  transformIgnorePatterns: ['node_modules/(?!(@repo)/)'],
 };
