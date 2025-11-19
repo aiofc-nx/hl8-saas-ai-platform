@@ -1,6 +1,5 @@
+import { EntityManager, MikroORM } from '@mikro-orm/postgresql';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MikroORM } from '@mikro-orm/postgresql';
-import { EntityManager } from '@mikro-orm/postgresql';
 import { TransactionService } from './transaction.service';
 
 /**
@@ -113,13 +112,11 @@ describe('TransactionService', () => {
     it('应该支持异步操作', async () => {
       // 准备测试数据
       const expectedResult = { data: 'async result' };
-      const mockFn = jest.fn().mockImplementation(
-        async (em: EntityManager) => {
-          // 模拟异步操作
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          return expectedResult;
-        },
-      );
+      const mockFn = jest.fn().mockImplementation(async (em: EntityManager) => {
+        // 模拟异步操作
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return expectedResult;
+      });
 
       // 模拟 transactional 方法
       mockEm.transactional = jest.fn().mockImplementation(async (callback) => {
@@ -135,4 +132,3 @@ describe('TransactionService', () => {
     });
   });
 });
-

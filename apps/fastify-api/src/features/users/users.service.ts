@@ -1,7 +1,7 @@
 import { User } from '@/features/users/entities/user.entity';
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 /**
  * 用户服务，用于管理用户数据。

@@ -1,10 +1,10 @@
+import { FileService } from '@/features/file/file.service';
+import { MemoryStorageFile } from '@blazity/nest-file-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Profile } from './entities/profile.entity';
+import { User } from './entities/user.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { FileService } from '@/features/file/file.service';
-import { User } from './entities/user.entity';
-import { Profile } from './entities/profile.entity';
-import { MemoryStorageFile } from '@blazity/nest-file-fastify';
 
 /**
  * UsersController 的单元测试套件。
@@ -159,4 +159,3 @@ describe('UsersController', () => {
     });
   });
 });
-

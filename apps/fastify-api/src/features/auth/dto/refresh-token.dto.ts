@@ -29,4 +29,3 @@ export class RefreshTokenDto {
   })
   session_token: string;
 }
-

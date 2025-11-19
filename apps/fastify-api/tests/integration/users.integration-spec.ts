@@ -1,16 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { AppModule } from '@/app.module';
+import { AuthService } from '@/features/auth/auth.service';
+import { MailService } from '@/features/mail/mail.service';
+import { User } from '@/features/users/entities/user.entity';
+import { UsersService } from '@/features/users/users.service';
+import { MikroORM } from '@mikro-orm/postgresql';
 import { INestApplication } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { AppModule } from '@/app.module';
-import { UsersService } from '@/features/users/users.service';
-import { AuthService } from '@/features/auth/auth.service';
-import { MikroORM } from '@mikro-orm/postgresql';
-import { User } from '@/features/users/entities/user.entity';
-import { Profile } from '@/features/users/entities/profile.entity';
-import { MailService } from '@/features/mail/mail.service';
+import { Test, TestingModule } from '@nestjs/testing';
 
 /**
  * 用户服务集成测试套件。
@@ -61,7 +60,11 @@ describe('Users Integration (e2e)', () => {
     if (orm && testUser) {
       const em = orm.em.fork();
       try {
-        const user = await em.findOne(User, { id: testUser.id }, { populate: ['profile'] });
+        const user = await em.findOne(
+          User,
+          { id: testUser.id },
+          { populate: ['profile'] },
+        );
         if (user) {
           if (user.profile) {
             await em.removeAndFlush(user.profile);
@@ -137,4 +140,3 @@ describe('Users Integration (e2e)', () => {
     });
   });
 });
-

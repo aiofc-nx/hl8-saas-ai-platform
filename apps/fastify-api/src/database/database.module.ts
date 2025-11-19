@@ -1,8 +1,8 @@
 import { Env } from '@/common/utils';
-import { Module, OnModuleInit } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { PostgreSqlDriver, MikroORM } from '@mikro-orm/postgresql';
+import { PostgreSqlDriver } from '@mikro-orm/postgresql';
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TransactionService } from './transaction.service';
 
 /**

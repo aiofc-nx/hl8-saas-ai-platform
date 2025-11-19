@@ -1,4 +1,7 @@
 import { Public } from '@/common/decorators';
+import { User } from '@/features/users/entities/user.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import { Controller, Get } from '@nestjs/common';
 import {
   DiskHealthIndicator,
@@ -7,10 +10,6 @@ import {
   HttpHealthIndicator,
   MemoryHealthIndicator,
 } from '@nestjs/terminus';
-import { EntityManager } from '@mikro-orm/postgresql';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
-import { User } from '@/features/users/entities/user.entity';
 
 /**
  * 健康检查控制器，用于检查各种系统组件的健康状态。

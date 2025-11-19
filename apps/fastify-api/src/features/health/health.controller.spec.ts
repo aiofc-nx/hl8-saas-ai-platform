@@ -1,3 +1,6 @@
+import { User } from '@/features/users/entities/user.entity';
+import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { HttpModule } from '@nestjs/axios';
 import {
   DiskHealthIndicator,
@@ -6,10 +9,7 @@ import {
   MemoryHealthIndicator,
 } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
-import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
 import { HealthController } from './health.controller';
-import { User } from '@/features/users/entities/user.entity';
 
 /**
  * HealthController 的单元测试套件。
@@ -115,13 +115,17 @@ describe('HealthController', () => {
         'aung pyae phyo': { status: 'up' },
       });
       // healthCheckService.check 会调用传入的函数数组
-      healthCheckService.check = jest.fn().mockImplementation(async (checks) => {
-        const results = await Promise.all(checks.map((check: () => Promise<any>) => check()));
-        return {
-          status: 'ok',
-          info: Object.assign({}, ...results),
-        };
-      });
+      healthCheckService.check = jest
+        .fn()
+        .mockImplementation(async (checks) => {
+          const results = await Promise.all(
+            checks.map((check: () => Promise<any>) => check()),
+          );
+          return {
+            status: 'ok',
+            info: Object.assign({}, ...results),
+          };
+        });
 
       // 执行测试
       const result = await controller.check();
@@ -152,13 +156,17 @@ describe('HealthController', () => {
         storage: { status: 'up' },
       });
       // healthCheckService.check 会调用传入的函数数组
-      healthCheckService.check = jest.fn().mockImplementation(async (checks) => {
-        const results = await Promise.all(checks.map((check: () => Promise<any>) => check()));
-        return {
-          status: 'ok',
-          info: Object.assign({}, ...results),
-        };
-      });
+      healthCheckService.check = jest
+        .fn()
+        .mockImplementation(async (checks) => {
+          const results = await Promise.all(
+            checks.map((check: () => Promise<any>) => check()),
+          );
+          return {
+            status: 'ok',
+            info: Object.assign({}, ...results),
+          };
+        });
 
       // 执行测试
       const result = await controller.checkDisk();
@@ -189,13 +197,17 @@ describe('HealthController', () => {
         memory_heap: { status: 'up' },
       });
       // healthCheckService.check 会调用传入的函数数组
-      healthCheckService.check = jest.fn().mockImplementation(async (checks) => {
-        const results = await Promise.all(checks.map((check: () => Promise<any>) => check()));
-        return {
-          status: 'ok',
-          info: Object.assign({}, ...results),
-        };
-      });
+      healthCheckService.check = jest
+        .fn()
+        .mockImplementation(async (checks) => {
+          const results = await Promise.all(
+            checks.map((check: () => Promise<any>) => check()),
+          );
+          return {
+            status: 'ok',
+            info: Object.assign({}, ...results),
+          };
+        });
 
       // 执行测试
       const result = await controller.checkMemory();
@@ -226,13 +238,17 @@ describe('HealthController', () => {
         .fn()
         .mockResolvedValue(undefined);
       // healthCheckService.check 会调用传入的函数数组，我们需要模拟这个行为
-      healthCheckService.check = jest.fn().mockImplementation(async (checks) => {
-        const results = await Promise.all(checks.map((check: () => Promise<any>) => check()));
-        return {
-          status: 'ok',
-          info: Object.assign({}, ...results),
-        };
-      });
+      healthCheckService.check = jest
+        .fn()
+        .mockImplementation(async (checks) => {
+          const results = await Promise.all(
+            checks.map((check: () => Promise<any>) => check()),
+          );
+          return {
+            status: 'ok',
+            info: Object.assign({}, ...results),
+          };
+        });
 
       // 执行测试
       const result = await controller.checkDatabase();
@@ -249,15 +265,21 @@ describe('HealthController', () => {
     it('应该在数据库连接失败时返回不健康状态', async () => {
       // 准备测试数据
       const error = new Error('数据库连接失败');
-      entityManager.getConnection().execute = jest.fn().mockRejectedValue(error);
+      entityManager.getConnection().execute = jest
+        .fn()
+        .mockRejectedValue(error);
       // healthCheckService.check 会调用传入的函数数组，我们需要模拟这个行为
-      healthCheckService.check = jest.fn().mockImplementation(async (checks) => {
-        const results = await Promise.all(checks.map((check: () => Promise<any>) => check()));
-        return {
-          status: 'error',
-          error: Object.assign({}, ...results),
-        };
-      });
+      healthCheckService.check = jest
+        .fn()
+        .mockImplementation(async (checks) => {
+          const results = await Promise.all(
+            checks.map((check: () => Promise<any>) => check()),
+          );
+          return {
+            status: 'error',
+            error: Object.assign({}, ...results),
+          };
+        });
 
       // 执行测试
       const result = await controller.checkDatabase();
@@ -277,13 +299,17 @@ describe('HealthController', () => {
         .fn()
         .mockRejectedValue(unknownError);
       // healthCheckService.check 会调用传入的函数数组，我们需要模拟这个行为
-      healthCheckService.check = jest.fn().mockImplementation(async (checks) => {
-        const results = await Promise.all(checks.map((check: () => Promise<any>) => check()));
-        return {
-          status: 'error',
-          error: Object.assign({}, ...results),
-        };
-      });
+      healthCheckService.check = jest
+        .fn()
+        .mockImplementation(async (checks) => {
+          const results = await Promise.all(
+            checks.map((check: () => Promise<any>) => check()),
+          );
+          return {
+            status: 'error',
+            error: Object.assign({}, ...results),
+          };
+        });
 
       // 执行测试
       const result = await controller.checkDatabase();

@@ -1,9 +1,5 @@
 {
-  "moduleFileExtensions": [
-    "js",
-    "json",
-    "ts"
-  ],
+  "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
@@ -22,8 +18,6 @@
     "^@/(.*)$": "<rootDir>/../../src/$1",
     "^@repo/constants/(.*)$": "<rootDir>/../../../../packages/constants/$1"
   },
-  "transformIgnorePatterns": [
-    "node_modules/(?!@repo/)"
-  ],
+  "transformIgnorePatterns": ["node_modules/(?!@repo/)"],
   "testTimeout": 60000
 }

@@ -38,6 +38,8 @@ import {
 } from '@/features/mail/templates';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import {
   BadRequestException,
   Injectable,
@@ -46,8 +48,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
-import { InjectRepository } from '@mikro-orm/nestjs';
 import { Logger } from 'nestjs-pino';
 
 /**
@@ -153,19 +153,19 @@ export class AuthService {
       {
         $or: [{ email: dto.identifier }, { username: dto.identifier }],
       },
-      { 
+      {
         populate: ['profile'],
         // 不指定 fields，让 MikroORM 加载所有字段（包括 hidden 字段）
       },
     );
-    
+
     if (!user) {
       this.logger.warn('User not found for login attempt', {
         identifier: dto.identifier,
       });
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     // 检查密码字段是否被加载
     if (!user.password) {
       this.logger.error('User password field is null or undefined', {
@@ -176,16 +176,18 @@ export class AuthService {
       });
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     // 添加详细的日志（使用 log 级别确保输出）
     this.logger.log('Validating password', {
       userId: user.id,
       email: user.email,
-      passwordHashPrefix: user.password ? user.password.substring(0, 20) : 'null',
+      passwordHashPrefix: user.password
+        ? user.password.substring(0, 20)
+        : 'null',
       passwordHashLength: user.password ? user.password.length : 0,
       inputPasswordLength: dto.password.length,
     });
-    
+
     const isValid = await validateString(dto.password, user.password);
     if (!isValid) {
       this.logger.warn('Password validation failed', {
@@ -197,12 +199,12 @@ export class AuthService {
       });
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     this.logger.log('Password validation succeeded', {
       userId: user.id,
       email: user.email,
     });
-    
+
     return user;
   }
 
@@ -225,7 +227,10 @@ export class AuthService {
     try {
       // 检查用户名和邮箱是否已存在
       const existingUser = await this.userRepository.findOne({
-        $or: [{ email: createUserDto.email }, { username: createUserDto.email.split('@')[0] }],
+        $or: [
+          { email: createUserDto.email },
+          { username: createUserDto.email.split('@')[0] },
+        ],
       });
       if (existingUser) {
         throw new BadRequestException('Username or email already exists');
@@ -291,7 +296,8 @@ export class AuthService {
       } catch (mailError) {
         // 记录邮件发送错误，但不阻止用户注册
         this.logger.warn('Failed to send registration email', {
-          error: mailError instanceof Error ? mailError.message : String(mailError),
+          error:
+            mailError instanceof Error ? mailError.message : String(mailError),
           email: user.email,
         });
         // 如果邮件配置缺失，提供更明确的错误信息
@@ -407,6 +413,57 @@ export class AuthService {
       subject: 'Confirmation Successful',
       html: ConfirmEmailSuccessMail({
         name: user.profile.name,
+      }),
+    });
+  }
+
+  /**
+   * 重新发送邮箱确认邮件。
+   *
+   * @description 为未验证邮箱的用户重新生成并发送邮箱确认 OTP。
+   *
+   * @param {string} email - 用户邮箱地址。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果用户不存在。
+   * @throws {BadRequestException} 如果用户邮箱已验证。
+   */
+  async resendConfirmationEmail(email: string): Promise<void> {
+    const user = await this.userRepository.findOne(
+      { email },
+      { populate: ['profile'] },
+    );
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    // 生成新的 OTP
+    const email_confirmation_otp = await generateOTP();
+
+    // 删除该用户旧的 EMAIL_CONFIRMATION 类型的 OTP
+    // 注意：OTP 实体没有直接关联用户，需要通过其他方式识别
+    // 这里我们删除所有 EMAIL_CONFIRMATION 类型的 OTP，因为每个用户注册时都会创建新的
+    const em = this.userRepository.getEntityManager();
+    const oldOtps = await this.otpRepository.find({
+      type: TokenTypes.EMAIL_CONFIRMATION,
+    });
+    oldOtps.forEach((otp) => em.remove(otp));
+
+    // 创建新的 OTP
+    const otp = new Otp();
+    otp.otp = email_confirmation_otp;
+    otp.type = TokenTypes.EMAIL_CONFIRMATION;
+    otp.expires = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 小时过期
+    em.persist(otp);
+    await em.flush();
+
+    // 发送确认邮件
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'Confirm your email',
+      html: RegisterSuccessMail({
+        name: user.profile?.name || extractName(user.email),
+        otp: email_confirmation_otp,
       }),
     });
   }
@@ -626,4 +683,3 @@ export class AuthService {
     }
   }
 }
-

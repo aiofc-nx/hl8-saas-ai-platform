@@ -1,3 +1,4 @@
+import { IS_PUBLIC_KEY } from '@/common/decorators';
 import { Env } from '@/common/utils';
 import {
   CanActivate,
@@ -9,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { IS_PUBLIC_KEY } from '@/common/decorators';
 
 /**
  * JWT 认证守卫，用于保护 NestJS 应用中的路由。

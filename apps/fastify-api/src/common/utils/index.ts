@@ -12,9 +12,27 @@ export const getRandomInt = (min: number, max: number) => {
   return Math.floor(Math.random() * (maxFloored - minCelled) + minCelled); // The maximum is exclusive and the minimum is inclusive
 };
 
+/**
+ * 从邮箱地址提取用户名。
+ *
+ * @description 从邮箱地址中提取用户名部分，并移除末尾的数字。
+ * 如果移除数字后为空字符串，则返回原始用户名。
+ *
+ * @param {string} email - 邮箱地址。
+ * @returns {string} 提取的用户名。
+ *
+ * @example
+ * ```typescript
+ * extractName('john.doe@example.com'); // 'john.doe'
+ * extractName('user123@example.com'); // 'user'
+ * extractName('123456@example.com'); // '123456' (如果全是数字，返回原值)
+ * ```
+ */
 export function extractName(email: string): string {
   const username = email.split('@')[0];
-  return username.replace(/\d+$/, '');
+  const nameWithoutNumbers = username.replace(/\d+$/, '');
+  // 如果移除数字后为空，返回原始用户名
+  return nameWithoutNumbers || username;
 }
 
 export const generateRefreshTime = async (day = 3): Promise<string> => {

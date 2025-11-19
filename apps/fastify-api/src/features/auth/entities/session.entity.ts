@@ -1,6 +1,7 @@
 import { Base } from '@/common/entities';
-import { Entity, ManyToOne, Property, Rel } from '@mikro-orm/postgresql';
 import { User } from '@/features/users/entities/user.entity';
+import type { Rel } from '@mikro-orm/postgresql';
+import { Entity, ManyToOne, Property } from '@mikro-orm/postgresql';
 
 /**
  * 用户会话实体。

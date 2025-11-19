@@ -1,10 +1,7 @@
 import { Public } from '@/common/decorators';
 import { FileService } from '@/features/file/file.service';
-import {
-  FileInterceptor,
-  MemoryStorageFile,
-  UploadedFile,
-} from '@blazity/nest-file-fastify';
+import type { MemoryStorageFile } from '@blazity/nest-file-fastify';
+import { FileInterceptor, UploadedFile } from '@blazity/nest-file-fastify';
 import { Controller, Get, Param, Post, UseInterceptors } from '@nestjs/common';
 import { UsersService } from './users.service';
 

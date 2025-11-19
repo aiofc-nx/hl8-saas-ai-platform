@@ -1,7 +1,7 @@
 import { Role } from '@/common/constants';
+import { ROLES_KEY } from '@/common/decorators';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from '@/common/decorators';
 
 /**
  * 角色守卫，用于在 NestJS 应用中强制执行基于角色的访问控制。

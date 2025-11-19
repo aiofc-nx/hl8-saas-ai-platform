@@ -154,16 +154,36 @@ export class AuthController {
    * 确认用户邮箱。
    *
    * @description 使用 OTP 验证码确认用户邮箱地址。
+   * 此端点标记为公共，因为用户可能还没有验证邮箱，无法提供有效的认证令牌。
    *
    * @param {ConfirmEmailDto} confirmEmailDto - 邮箱确认数据。
    * @returns {Promise<MessageResponse>} 响应消息。
    */
+  @Public()
   @Patch('confirm-email')
   async confirmEmail(
     @Body() confirmEmailDto: ConfirmEmailDto,
   ): Promise<MessageResponse> {
     await this.authService.confirmEmail(confirmEmailDto);
     return { message: 'Email confirmed successfully' };
+  }
+
+  /**
+   * 重新发送邮箱确认邮件。
+   *
+   * @description 为未验证邮箱的用户重新发送确认邮件。
+   * 此端点标记为公共，因为用户可能还没有验证邮箱，无法提供有效的认证令牌。
+   *
+   * @param {string} email - 用户邮箱地址（从请求体获取）。
+   * @returns {Promise<MessageResponse>} 响应消息。
+   */
+  @Public()
+  @Post('resend-confirmation-email')
+  async resendConfirmationEmail(
+    @Body('email') email: string,
+  ): Promise<MessageResponse> {
+    await this.authService.resendConfirmationEmail(email);
+    return { message: 'Confirmation email sent successfully' };
   }
 
   /**
@@ -253,4 +273,3 @@ export class AuthController {
     return { message: 'User deleted successfully' };
   }
 }
-

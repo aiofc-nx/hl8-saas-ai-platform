@@ -16,4 +16,3 @@ export class SignOutAllDeviceUserDto {
   @IsUUID()
   userId: string;
 }
-

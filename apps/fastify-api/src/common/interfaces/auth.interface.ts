@@ -116,4 +116,3 @@ export interface RefreshTokenInterface {
 export interface RegisterUserInterface {
   data: User;
 }
-

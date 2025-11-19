@@ -1,5 +1,7 @@
 import { Env } from '@/common/utils';
 import { Session } from '@/features/auth/entities/session.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityRepository } from '@mikro-orm/postgresql';
 import {
   CanActivate,
   ExecutionContext,
@@ -8,8 +10,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { EntityRepository } from '@mikro-orm/postgresql';
-import { InjectRepository } from '@mikro-orm/nestjs';
 import { Request } from 'express';
 
 /**

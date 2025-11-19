@@ -1,7 +1,5 @@
 {
-  "namespaces": [
-    "public"
-  ],
+  "namespaces": ["public"],
   "name": "public",
   "tables": [
     {
@@ -78,9 +76,7 @@
       "indexes": [
         {
           "keyName": "otp_pkey",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -180,9 +176,7 @@
       "schema": "public",
       "indexes": [
         {
-          "columnNames": [
-            "email"
-          ],
+          "columnNames": ["email"],
           "composite": false,
           "keyName": "user_email_unique",
           "constraint": true,
@@ -190,9 +184,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "username"
-          ],
+          "columnNames": ["username"],
           "composite": false,
           "keyName": "user_username_unique",
           "constraint": true,
@@ -201,9 +193,7 @@
         },
         {
           "keyName": "user_pkey",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -349,9 +339,7 @@
       "indexes": [
         {
           "keyName": "session_pkey",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -362,13 +350,9 @@
       "foreignKeys": {
         "session_user_id_foreign": {
           "constraintName": "session_user_id_foreign",
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "localTableName": "public.session",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.user",
           "updateRule": "cascade"
         }
@@ -483,9 +467,7 @@
       "schema": "public",
       "indexes": [
         {
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "composite": false,
           "keyName": "profile_user_id_unique",
           "constraint": true,
@@ -493,9 +475,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "phone_number"
-          ],
+          "columnNames": ["phone_number"],
           "composite": false,
           "keyName": "profile_phone_number_unique",
           "constraint": true,
@@ -504,9 +484,7 @@
         },
         {
           "keyName": "profile_pkey",
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "primary": true,
@@ -517,13 +495,9 @@
       "foreignKeys": {
         "profile_user_id_foreign": {
           "constraintName": "profile_user_id_foreign",
-          "columnNames": [
-            "user_id"
-          ],
+          "columnNames": ["user_id"],
           "localTableName": "public.profile",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.user",
           "updateRule": "cascade"
         }

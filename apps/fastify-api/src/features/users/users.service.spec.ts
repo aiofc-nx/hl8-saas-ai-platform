@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { EntityRepository } from '@mikro-orm/postgresql';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
-import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
+import { EntityRepository } from '@mikro-orm/postgresql';
+import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Profile } from './entities/profile.entity';
+import { User } from './entities/user.entity';
+import { UsersService } from './users.service';
 
 /**
  * UsersService 的单元测试套件。
@@ -135,4 +135,3 @@ describe('UsersService', () => {
     });
   });
 });
-

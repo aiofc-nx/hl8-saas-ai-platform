@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
 import { TransactionService } from '@/database';
-import { MikroORM } from '@mikro-orm/postgresql';
-import { User } from '@/features/users/entities/user.entity';
 import { Profile } from '@/features/users/entities/profile.entity';
+import { User } from '@/features/users/entities/user.entity';
+import { MikroORM } from '@mikro-orm/postgresql';
+import { Test, TestingModule } from '@nestjs/testing';
 
 /**
  * 数据库事务集成测试套件。
@@ -22,9 +22,8 @@ describe('Database Transaction Integration (e2e)', () => {
       imports: [AppModule],
     }).compile();
 
-    transactionService = moduleFixture.get<TransactionService>(
-      TransactionService,
-    );
+    transactionService =
+      moduleFixture.get<TransactionService>(TransactionService);
     orm = moduleFixture.get<MikroORM>(MikroORM);
   });
 
@@ -34,9 +33,13 @@ describe('Database Transaction Integration (e2e)', () => {
       const em = orm.em.fork();
       try {
         // 清理测试用户
-        const testUsers = await em.find(User, {
-          email: { $like: 'test-tx-%' },
-        }, { populate: ['profile'] });
+        const testUsers = await em.find(
+          User,
+          {
+            email: { $like: 'test-tx-%' },
+          },
+          { populate: ['profile'] },
+        );
         for (const user of testUsers) {
           if (user.profile) {
             await em.removeAndFlush(user.profile);
@@ -56,24 +59,22 @@ describe('Database Transaction Integration (e2e)', () => {
       const testUsername = testEmail.split('@')[0];
 
       // 在事务中创建用户和个人资料
-      const result = await transactionService.runInTransaction(
-        async (em) => {
-          const user = new User();
-          user.email = testEmail;
-          user.username = testUsername;
-          user.password = 'hashed-password';
-          em.persist(user);
+      const result = await transactionService.runInTransaction(async (em) => {
+        const user = new User();
+        user.email = testEmail;
+        user.username = testUsername;
+        user.password = 'hashed-password';
+        em.persist(user);
 
-          const profile = new Profile();
-          profile.name = testUsername;
-          profile.user = user;
-          em.persist(profile);
+        const profile = new Profile();
+        profile.name = testUsername;
+        profile.user = user;
+        em.persist(profile);
 
-          await em.flush();
+        await em.flush();
 
-          return { userId: user.id, profileId: profile.id };
-        },
-      );
+        return { userId: user.id, profileId: profile.id };
+      });
 
       // 验证结果
       expect(result.userId).toBeDefined();
@@ -162,4 +163,3 @@ describe('Database Transaction Integration (e2e)', () => {
     });
   });
 });
-

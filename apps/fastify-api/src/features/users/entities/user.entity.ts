@@ -1,7 +1,13 @@
 import { Base } from '@/common/entities';
-import { hashString } from '@/common/utils';
-import { Collection, Entity, OneToMany, OneToOne, Property, Cascade } from '@mikro-orm/postgresql';
 import { Session } from '@/features/auth/entities/session.entity';
+import {
+  Cascade,
+  Collection,
+  Entity,
+  OneToMany,
+  OneToOne,
+  Property,
+} from '@mikro-orm/postgresql';
 import { Profile } from './profile.entity';
 
 /**
@@ -68,7 +74,9 @@ export class User extends Base {
    *
    * @type {Collection<Session>}
    */
-  @OneToMany(() => Session, (session) => session.user, { cascade: [Cascade.PERSIST, Cascade.REMOVE] })
+  @OneToMany(() => Session, (session) => session.user, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+  })
   sessions = new Collection<Session>(this);
 
   /**
@@ -76,7 +84,8 @@ export class User extends Base {
    *
    * @type {Profile}
    */
-  @OneToOne(() => Profile, (profile) => profile.user, { cascade: [Cascade.PERSIST, Cascade.REMOVE] })
+  @OneToOne(() => Profile, (profile) => profile.user, {
+    cascade: [Cascade.PERSIST, Cascade.REMOVE],
+  })
   profile!: Profile;
-
 }

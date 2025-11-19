@@ -37,8 +37,12 @@ export const ResetPasswordMail = ({
     ${code}
   </p>
 
+  <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;text-align:center;">
+    <a href="${APP_URL}/auth/reset-password" style="display:inline-block;background-color:#9147ff;color:#fff;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:600;margin:16px 0;">Reset Password</a>
+  </p>
+
   <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-    This code will expire in 10 minutes. If you didn’t request a password reset, you can safely ignore this email.
+    This code will expire in 24 hours. If you didn't request a password reset, you can safely ignore this email.
   </p>
 
   <p style="font-size:14px;line-height:1.5;margin:16px 0;">

@@ -1,11 +1,11 @@
-import { DatabaseModule, TransactionService } from '@/database';
+import { DatabaseModule } from '@/database';
 import { Otp } from '@/features/auth/entities/otp.entity';
 import { Session } from '@/features/auth/entities/session.entity';
 import { MailModule } from '@/features/mail/mail.module';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
-import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -25,4 +25,3 @@ import { AuthService } from './auth.service';
   exports: [AuthService],
 })
 export class AuthModule {}
-

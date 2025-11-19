@@ -27,4 +27,3 @@ export class ConfirmEmailDto {
   @IsEmail()
   email: string;
 }
-

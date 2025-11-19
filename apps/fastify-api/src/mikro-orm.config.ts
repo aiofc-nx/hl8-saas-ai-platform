@@ -1,7 +1,7 @@
-import { defineConfig } from '@mikro-orm/postgresql';
-import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
-import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { Migrator } from '@mikro-orm/migrations';
+import { defineConfig } from '@mikro-orm/postgresql';
+import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 
 // 尝试加载 .env 文件（如果 dotenv 可用）
 try {
@@ -28,25 +28,26 @@ try {
 export default defineConfig({
   // 注意：在 NestJS 中，实际配置会通过 MikroOrmModule.forRoot() 传入
   // 此文件主要用于 CLI 工具（mikro-orm migration:create 等）
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    user: process.env.DB_USERNAME || 'postgres',
-    password: String(process.env.DB_PASSWORD || ''),
-    dbName: process.env.DB_NAME || 'fastify_api',
-    entities: ['dist/**/*.entity.js'],
-    entitiesTs: ['src/**/*.entity.ts'],
-    migrations: {
-      path: 'dist/migrations',
-      pathTs: 'src/migrations',
-      glob: '!(*.d).{js,ts}',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  user: process.env.DB_USERNAME || 'postgres',
+  password: String(process.env.DB_PASSWORD || ''),
+  dbName: process.env.DB_NAME || 'fastify_api',
+  entities: ['dist/**/*.entity.js'],
+  entitiesTs: ['src/**/*.entity.ts'],
+  migrations: {
+    path: 'dist/migrations',
+    pathTs: 'src/migrations',
+    glob: '!(*.d).{js,ts}',
+  },
+  debug: process.env.NODE_ENV !== 'production',
+  highlighter: new SqlHighlighter(),
+  metadataProvider: TsMorphMetadataProvider,
+  extensions: [Migrator],
+  driverOptions: {
+    connection: {
+      ssl:
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     },
-    debug: process.env.NODE_ENV !== 'production',
-    highlighter: new SqlHighlighter(),
-    metadataProvider: TsMorphMetadataProvider,
-    extensions: [Migrator],
-    driverOptions: {
-      connection: {
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-      },
-    },
+  },
 });

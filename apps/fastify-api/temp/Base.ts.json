@@ -1,1 +1,53 @@
-{"data":{"_id":0,"properties":{"id":{"name":"id","kind":"scalar","primary":true,"type":"uuid","defaultRaw":"gen_random_uuid()","array":false,"runtimeType":"string"},"createdAt":{"name":"createdAt","kind":"scalar","type":"timestamp","defaultRaw":"CURRENT_TIMESTAMP","getter":false,"setter":false,"array":false,"runtimeType":"Date"},"updatedAt":{"name":"updatedAt","kind":"scalar","type":"timestamp","defaultRaw":"CURRENT_TIMESTAMP","getter":false,"setter":false,"array":false,"runtimeType":"Date"}},"primaryKeys":["id"],"filters":{},"hooks":{},"indexes":[],"uniques":[],"className":"Base","path":"./src/common/entities/base.entity.ts","abstract":true,"internal":true,"constructorParams":[],"toJsonParams":[],"useCache":true,"compositePK":false,"simplePK":true},"origin":"./src/common/entities/base.entity.ts","hash":"97b5ea9c59298b78be2efdc3f04744b4","version":"6.6.0"}
+{
+  "data": {
+    "_id": 0,
+    "properties": {
+      "id": {
+        "name": "id",
+        "kind": "scalar",
+        "primary": true,
+        "type": "uuid",
+        "defaultRaw": "gen_random_uuid()",
+        "array": false,
+        "runtimeType": "string"
+      },
+      "createdAt": {
+        "name": "createdAt",
+        "kind": "scalar",
+        "type": "timestamp",
+        "defaultRaw": "CURRENT_TIMESTAMP",
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "runtimeType": "Date"
+      },
+      "updatedAt": {
+        "name": "updatedAt",
+        "kind": "scalar",
+        "type": "timestamp",
+        "defaultRaw": "CURRENT_TIMESTAMP",
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "runtimeType": "Date"
+      }
+    },
+    "primaryKeys": ["id"],
+    "filters": {},
+    "hooks": {},
+    "indexes": [],
+    "uniques": [],
+    "className": "Base",
+    "path": "./src/common/entities/base.entity.ts",
+    "abstract": true,
+    "internal": true,
+    "constructorParams": [],
+    "toJsonParams": [],
+    "useCache": true,
+    "compositePK": false,
+    "simplePK": true
+  },
+  "origin": "./src/common/entities/base.entity.ts",
+  "hash": "97b5ea9c59298b78be2efdc3f04744b4",
+  "version": "6.6.0"
+}

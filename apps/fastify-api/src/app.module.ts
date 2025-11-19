@@ -9,12 +9,12 @@ import { DatabaseModule } from '@/database';
 import { AuthModule } from '@/features/auth/auth.module';
 import { FileModule } from '@/features/file/file.module';
 import { UsersModule } from '@/features/users/users.module';
+import { MikroORM } from '@mikro-orm/postgresql';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { MikroORM } from '@mikro-orm/postgresql';
 import { HealthModule } from './features/health/health.module';
 import { MailModule } from './features/mail/mail.module';
 

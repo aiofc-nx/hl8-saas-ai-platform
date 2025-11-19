@@ -1,18 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { AppModule } from '@/app.module';
+import { AuthService } from '@/features/auth/auth.service';
+import { CreateUserDto } from '@/features/auth/dto';
+import { Session } from '@/features/auth/entities/session.entity';
+import { MailService } from '@/features/mail/mail.service';
+import { User } from '@/features/users/entities/user.entity';
+import { UsersService } from '@/features/users/users.service';
+import { MikroORM } from '@mikro-orm/postgresql';
 import { INestApplication } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { AppModule } from '@/app.module';
-import { AuthService } from '@/features/auth/auth.service';
-import { UsersService } from '@/features/users/users.service';
-import { TransactionService } from '@/database';
-import { MikroORM } from '@mikro-orm/postgresql';
-import { User } from '@/features/users/entities/user.entity';
-import { Session } from '@/features/auth/entities/session.entity';
-import { CreateUserDto } from '@/features/auth/dto';
-import { MailService } from '@/features/mail/mail.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 
 /**
@@ -63,7 +62,11 @@ describe('Auth Integration (e2e)', () => {
     if (orm && testUserEmail) {
       const em = orm.em.fork();
       try {
-        const testUser = await em.findOne(User, { email: testUserEmail }, { populate: ['profile'] });
+        const testUser = await em.findOne(
+          User,
+          { email: testUserEmail },
+          { populate: ['profile'] },
+        );
         if (testUser) {
           // 清理会话
           const sessions = await em.find(Session, { user: testUser });
@@ -158,7 +161,7 @@ describe('Auth Integration (e2e)', () => {
     beforeAll(async () => {
       // 使用不同的邮箱避免与前面的测试冲突
       apiTestUserEmail = `test-api-${Date.now()}@example.com`;
-      
+
       // 先注册并登录用户
       await authService.register({
         email: apiTestUserEmail,
@@ -203,4 +206,3 @@ describe('Auth Integration (e2e)', () => {
     }, 60000); // 设置测试超时时间为 60 秒
   });
 });
-

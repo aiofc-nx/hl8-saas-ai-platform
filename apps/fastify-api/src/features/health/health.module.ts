@@ -1,8 +1,8 @@
+import { User } from '@/features/users/entities/user.entity';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { User } from '@/features/users/entities/user.entity';
 import { HealthController } from './health.controller';
 
 /**

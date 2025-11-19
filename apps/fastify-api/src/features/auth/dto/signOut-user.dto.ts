@@ -16,4 +16,3 @@ export class SignOutUserDto {
   @IsUUID()
   session_token: string;
 }
-

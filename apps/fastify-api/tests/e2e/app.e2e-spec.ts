@@ -1,12 +1,12 @@
 import { AppModule } from '@/app.module';
+import { MailService } from '@/features/mail/mail.service';
+import { MikroORM } from '@mikro-orm/postgresql';
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { MailService } from '@/features/mail/mail.service';
-import { MikroORM } from '@mikro-orm/postgresql';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 
 /**

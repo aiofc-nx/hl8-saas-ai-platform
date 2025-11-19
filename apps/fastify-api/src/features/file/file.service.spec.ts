@@ -1,5 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from 'nestjs-pino';
 import { FileService } from './file.service';
 
@@ -89,7 +89,7 @@ describe('FileService', () => {
         ],
       }).compile();
       service = module.get<FileService>(FileService);
-      
+
       jest.spyOn(fileUtils, 'saveFile').mockResolvedValue(expectedResult);
 
       // 执行测试
@@ -123,7 +123,7 @@ describe('FileService', () => {
         ],
       }).compile();
       service = module.get<FileService>(FileService);
-      
+
       jest.spyOn(s3Utils, 'saveFileToS3').mockResolvedValue(expectedResult);
 
       // 执行测试
@@ -151,7 +151,7 @@ describe('FileService', () => {
         ],
       }).compile();
       service = module.get<FileService>(FileService);
-      
+
       jest.spyOn(fileUtils, 'deleteFile').mockResolvedValue(undefined);
 
       // 执行测试
@@ -176,13 +176,11 @@ describe('FileService', () => {
         ],
       }).compile();
       service = module.get<FileService>(FileService);
-      
+
       jest.spyOn(fileUtils, 'deleteFile').mockRejectedValue(error);
 
       // 执行测试并验证异常
-      await expect(service.deleteFile(filePath)).rejects.toThrow(
-        '删除失败',
-      );
+      await expect(service.deleteFile(filePath)).rejects.toThrow('删除失败');
       expect(logger.error).toHaveBeenCalledWith(error);
     });
   });
@@ -206,7 +204,7 @@ describe('FileService', () => {
         ],
       }).compile();
       service = module.get<FileService>(FileService);
-      
+
       jest.spyOn(fileUtils, 'deleteFiles').mockResolvedValue(settledResults);
 
       // 执行测试
@@ -231,7 +229,7 @@ describe('FileService', () => {
         ],
       }).compile();
       service = module.get<FileService>(FileService);
-      
+
       // deleteFiles 使用 Promise.allSettled，不会抛出异常，但我们可以模拟其他错误场景
       jest.spyOn(fileUtils, 'deleteFiles').mockImplementation(() => {
         throw error;
