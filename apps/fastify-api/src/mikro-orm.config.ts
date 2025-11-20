@@ -2,13 +2,15 @@ import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
+import { resolve } from 'path';
 
 // 尝试加载 .env 文件（如果 dotenv 可用）
 try {
+  // 使用 process.cwd() 获取项目根目录，兼容 CommonJS 和 ES 模块
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { config } = require('dotenv');
-  const { resolve } = require('path');
-  config({ path: resolve(__dirname, '../.env') });
+  const envPath = resolve(process.cwd(), '.env');
+  config({ path: envPath });
 } catch {
   // dotenv 不可用，使用环境变量
 }

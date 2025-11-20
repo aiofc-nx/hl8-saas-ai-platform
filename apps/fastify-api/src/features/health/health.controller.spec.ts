@@ -102,15 +102,6 @@ describe('HealthController', () => {
 
   describe('check', () => {
     it('应该执行 HTTP ping 健康检查', async () => {
-      // 准备测试数据
-      const expectedResult = {
-        status: 'ok',
-        info: {
-          'aung pyae phyo': {
-            status: 'up',
-          },
-        },
-      };
       httpHealthIndicator.pingCheck = jest.fn().mockResolvedValue({
         'aung pyae phyo': { status: 'up' },
       });
@@ -143,15 +134,6 @@ describe('HealthController', () => {
 
   describe('checkDisk', () => {
     it('应该执行磁盘存储健康检查', async () => {
-      // 准备测试数据
-      const expectedResult = {
-        status: 'ok',
-        info: {
-          storage: {
-            status: 'up',
-          },
-        },
-      };
       diskHealthIndicator.checkStorage = jest.fn().mockResolvedValue({
         storage: { status: 'up' },
       });
@@ -184,15 +166,6 @@ describe('HealthController', () => {
 
   describe('checkMemory', () => {
     it('应该执行内存堆健康检查', async () => {
-      // 准备测试数据
-      const expectedResult = {
-        status: 'ok',
-        info: {
-          memory_heap: {
-            status: 'up',
-          },
-        },
-      };
       memoryHealthIndicator.checkHeap = jest.fn().mockResolvedValue({
         memory_heap: { status: 'up' },
       });
@@ -225,15 +198,6 @@ describe('HealthController', () => {
 
   describe('checkDatabase', () => {
     it('应该在数据库连接正常时返回健康状态', async () => {
-      // 准备测试数据
-      const expectedResult = {
-        status: 'ok',
-        info: {
-          database: {
-            status: 'up',
-          },
-        },
-      };
       entityManager.getConnection().execute = jest
         .fn()
         .mockResolvedValue(undefined);

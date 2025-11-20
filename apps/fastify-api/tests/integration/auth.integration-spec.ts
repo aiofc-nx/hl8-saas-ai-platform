@@ -4,7 +4,6 @@ import { CreateUserDto } from '@/features/auth/dto';
 import { Session } from '@/features/auth/entities/session.entity';
 import { MailService } from '@/features/mail/mail.service';
 import { User } from '@/features/users/entities/user.entity';
-import { UsersService } from '@/features/users/users.service';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { INestApplication } from '@nestjs/common';
 import {
@@ -27,7 +26,6 @@ import * as request from 'supertest';
 describe('Auth Integration (e2e)', () => {
   let app: INestApplication;
   let authService: AuthService;
-  let usersService: UsersService;
   let orm: MikroORM;
   let testUserEmail: string;
   let testUserPassword: string;
@@ -49,7 +47,6 @@ describe('Auth Integration (e2e)', () => {
     await app.getHttpAdapter().getInstance().ready();
 
     authService = moduleFixture.get<AuthService>(AuthService);
-    usersService = moduleFixture.get<UsersService>(UsersService);
     orm = moduleFixture.get<MikroORM>(MikroORM);
 
     // 生成唯一的测试用户邮箱
@@ -80,7 +77,7 @@ describe('Auth Integration (e2e)', () => {
           // 清理用户
           await em.removeAndFlush(testUser);
         }
-      } catch (error) {
+      } catch {
         // 忽略清理错误
       }
     }
@@ -154,8 +151,6 @@ describe('Auth Integration (e2e)', () => {
   });
 
   describe('API 端点集成测试', () => {
-    let accessToken: string;
-    let sessionToken: string;
     let apiTestUserEmail: string;
 
     beforeAll(async () => {
@@ -168,7 +163,7 @@ describe('Auth Integration (e2e)', () => {
         password: testUserPassword,
       });
 
-      const loginResult = await authService.signIn({
+      await authService.signIn({
         identifier: apiTestUserEmail,
         password: testUserPassword,
         ip: '127.0.0.1',
@@ -178,9 +173,6 @@ describe('Auth Integration (e2e)', () => {
         location: 'Test Location',
         userAgent: 'Test User Agent',
       });
-
-      accessToken = loginResult.tokens.access_token;
-      sessionToken = loginResult.tokens.session_token;
     }, 60000);
 
     it('应该能够通过 API 获取用户信息', async () => {

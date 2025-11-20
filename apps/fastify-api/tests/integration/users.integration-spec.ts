@@ -71,7 +71,7 @@ describe('Users Integration (e2e)', () => {
           }
           await em.removeAndFlush(user);
         }
-      } catch (error) {
+      } catch {
         // 忽略清理错误
       }
     }

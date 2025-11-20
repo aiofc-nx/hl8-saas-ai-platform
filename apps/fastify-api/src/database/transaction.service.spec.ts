@@ -76,12 +76,8 @@ describe('TransactionService', () => {
 
       // 模拟 transactional 方法在异常时回滚
       mockEm.transactional = jest.fn().mockImplementation(async (callback) => {
-        try {
-          return await callback(mockEm);
-        } catch (e) {
-          // MikroORM 会自动回滚，这里只是模拟
-          throw e;
-        }
+        // MikroORM 会自动回滚，这里只是模拟
+        return callback(mockEm);
       });
 
       // 执行测试并验证异常
@@ -112,7 +108,7 @@ describe('TransactionService', () => {
     it('应该支持异步操作', async () => {
       // 准备测试数据
       const expectedResult = { data: 'async result' };
-      const mockFn = jest.fn().mockImplementation(async (em: EntityManager) => {
+      const mockFn = jest.fn().mockImplementation(async () => {
         // 模拟异步操作
         await new Promise((resolve) => setTimeout(resolve, 10));
         return expectedResult;

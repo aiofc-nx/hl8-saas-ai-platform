@@ -37,7 +37,8 @@ export class UsersController {
   @Get()
   async findAll(): Promise<{ message: string; data: any[] }> {
     const users = await this.usersService.findAll();
-    const data = users.map(({ password, ...user }) => ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const data = users.map(({ password: _password, ...user }) => ({
       ...user,
     }));
     return { message: 'Users fetched successfully', data };
@@ -58,7 +59,8 @@ export class UsersController {
     @Param('identifier') identifier: string,
   ): Promise<{ message: string; data: any }> {
     const user = await this.usersService.findOne(identifier);
-    const { password, ...data } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _password, ...data } = user;
     return { message: 'User fetched successfully', data };
   }
 

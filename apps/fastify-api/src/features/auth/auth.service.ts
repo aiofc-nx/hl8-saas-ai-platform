@@ -678,7 +678,7 @@ export class AuthService {
       const em = this.userRepository.getEntityManager();
       em.remove(user);
       await em.flush();
-    } catch (e) {
+    } catch {
       throw new BadRequestException('Failed to delete user account');
     }
   }

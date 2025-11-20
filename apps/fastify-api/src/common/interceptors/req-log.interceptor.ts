@@ -42,7 +42,6 @@ export class ReqLogInterceptor implements NestInterceptor {
    */
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const req = context.switchToHttp().getRequest();
-    const res = context.switchToHttp().getResponse();
 
     // 在处理请求前记录请求方法和 URL
     this.logger.log(concatStr([req.method, req.originalUrl]));
