@@ -26,17 +26,30 @@ import { Input } from '@repo/shadcn/input';
 import { Label } from '@repo/shadcn/label';
 import { useSession } from 'next-auth/react';
 import { useAction } from 'next-safe-action/hooks';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+/**
+ * @description 通用账户设置组件
+ * @remarks 显示用户的基本信息设置和账户删除功能
+ */
 export default function GeneralSettings() {
-  const session = useSession({
-    required: true,
-  });
+  const session = useSession();
   const [userData, setUserData] = useState({
-    name: session?.data?.user?.profile?.name ?? '',
-    email: session?.data?.user.email ?? '',
-    username: session?.data?.user.username ?? '',
+    name: '',
+    email: '',
+    username: '',
   });
+
+  // 当 session 加载完成后更新用户数据
+  useEffect(() => {
+    if (session.data?.user) {
+      setUserData({
+        name: session.data.user.profile?.name ?? '',
+        email: session.data.user.email ?? '',
+        username: session.data.user.username ?? '',
+      });
+    }
+  }, [session.data?.user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,

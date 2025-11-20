@@ -38,7 +38,9 @@ const ProfileHeader = async ({ user }: { user: User }) => {
         <div className="flex flex-col sm:flex-row items-center sm:items-end gap-2 sm:gap-4 mb-2 sm:mb-4">
           <div className="text-center sm:text-left">
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              {user.profile.name ?? session?.user.profile.name}
+              {user.profile?.name ??
+                session?.user?.profile?.name ??
+                user.username}
               {user.username === session?.user?.username &&
                 !session?.user.isEmailVerified && (
                   <Link
