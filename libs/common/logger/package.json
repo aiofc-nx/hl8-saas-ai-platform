@@ -1,0 +1,69 @@
+{
+  "name": "@hl8/logger",
+  "version": "1.0.0",
+  "description": "企业级日志基础设施模块",
+  "keywords": [
+    "nestjs",
+    "logging",
+    "logger"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./index.js": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hl8/config": "workspace:*",
+    "@nestjs/common": "11.1.9",
+    "@nestjs/core": "11.1.9",
+    "class-transformer": "^0.5.1",
+    "class-validator": "0.14.2",
+    "fastify": "^5.6.1",
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.2",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/ts-config": "workspace:*",
+    "@types/debug": "^4.1.12",
+    "@types/jest": "^30.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/lodash.merge": "^4.6.9",
+    "@types/node": "24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
