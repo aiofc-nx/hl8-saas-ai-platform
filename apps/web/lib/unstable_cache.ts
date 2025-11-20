@@ -1,3 +1,6 @@
+import { unstable_cache as next_unstable_cache } from 'next/cache';
+import { cache } from 'react';
+
 /**
  * @description 提供去重功能的 unstable_cache 包装函数
  * @template Inputs - 输入参数数组类型
@@ -13,6 +16,7 @@
  * - 在同一请求中多次调用相同的缓存函数时，只会执行一次实际的计算
  * @see https://github.com/ethanniser/NextMaster/blob/main/src/lib/unstable-cache.ts
  */
+
 export const unstable_cache = <Inputs extends unknown[], Output>(
   cb: (...args: Inputs) => Promise<Output>,
   keyParts: string[],

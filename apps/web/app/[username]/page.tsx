@@ -53,7 +53,7 @@ const Page = async ({
               </CardHeader>
               <CardContent className="space-y-2">
                 <h2>
-                  {user.username} is a user on {user.profile?.name ?? 'HL8'}
+                  {user.username} 是一个用户 {user.profile?.name ?? 'HL8'}
                 </h2>
                 <hr />
                 <h3>Email: {user.email}</h3>

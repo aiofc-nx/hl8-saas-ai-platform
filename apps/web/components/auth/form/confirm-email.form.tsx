@@ -131,7 +131,7 @@ const ConfirmEmailForm = () => {
                         await resendEmail();
                         setResendSuccess(true);
                         setTimeout(() => setResendSuccess(false), 5000);
-                      } catch (error) {
+                      } catch {
                         // Error is handled by resendError
                       }
                     }}

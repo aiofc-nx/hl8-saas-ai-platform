@@ -54,9 +54,11 @@ const Page = async () => {
         {session?.user && (
           <div className=" flex-col flex justify-center items-center gap-5">
             <p>You are logged in as {session?.user.email}</p>
-            <Button asChild>
-              <Link href={`/${session?.user.username}`}>Your Profile</Link>
-            </Button>
+            {session?.user.username && (
+              <Button asChild>
+                <Link href={`/${session.user.username}`}>Your Profile</Link>
+              </Button>
+            )}
           </div>
         )}
       </div>

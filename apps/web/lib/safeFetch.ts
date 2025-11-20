@@ -24,7 +24,6 @@ export const safeFetch = async <T extends ZodSchema<unknown>>(
 
     // 检查响应体是否为空
     const contentType = response.headers.get('content-type');
-    const contentLength = response.headers.get('content-length');
 
     // 尝试获取响应文本（用于调试）
     const responseText = await response.text();
