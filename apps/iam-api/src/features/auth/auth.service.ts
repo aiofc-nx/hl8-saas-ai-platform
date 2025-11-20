@@ -1,0 +1,685 @@
+import {
+  AuthTokensInterface,
+  LoginUserInterface,
+  RefreshTokenInterface,
+  RegisterUserInterface,
+} from '@/common/interfaces';
+import {
+  Env,
+  extractName,
+  generateOTP,
+  generateRefreshTime,
+  hashString,
+  validateString,
+} from '@/common/utils';
+import { TransactionService } from '@/database';
+import {
+  ChangePasswordDto,
+  ConfirmEmailDto,
+  CreateUserDto,
+  DeleteUserDto,
+  ForgotPasswordDto,
+  RefreshTokenDto,
+  ResetPasswordDto,
+  SignInUserDto,
+  SignOutAllDeviceUserDto,
+  SignOutUserDto,
+  ValidateUserDto,
+} from '@/features/auth/dto';
+import { Otp, TokenTypes } from '@/features/auth/entities/otp.entity';
+import { Session } from '@/features/auth/entities/session.entity';
+import { MailService } from '@/features/mail/mail.service';
+import {
+  ChangePasswordSuccessMail,
+  ConfirmEmailSuccessMail,
+  RegisterSuccessMail,
+  ResetPasswordMail,
+  SignInSuccessMail,
+} from '@/features/mail/templates';
+import { Profile } from '@/features/users/entities/profile.entity';
+import { User } from '@/features/users/entities/user.entity';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Logger } from 'nestjs-pino';
+
+/**
+ * 认证服务，用于处理认证、注册、会话和用户安全逻辑。
+ *
+ * @description 提供以下功能：
+ * - 用户注册和验证
+ * - 用户登录和登出
+ * - JWT 令牌生成和管理
+ * - 会话管理
+ * - 密码重置和修改
+ * - 邮箱确认
+ * - OTP 验证码管理
+ * - 用户账户删除
+ */
+@Injectable()
+export class AuthService {
+  /**
+   * 创建 AuthService 实例。
+   *
+   * @param {JwtService} jwtService - JWT 服务，用于令牌操作。
+   * @param {ConfigService<Env>} config - 配置服务，用于访问环境变量。
+   * @param {EntityRepository<User>} userRepository - 用户实体的仓库。
+   * @param {EntityRepository<Profile>} profileRepository - 个人资料实体的仓库。
+   * @param {EntityRepository<Session>} sessionRepository - 会话实体的仓库。
+   * @param {EntityRepository<Otp>} otpRepository - OTP 实体的仓库。
+   * @param {TransactionService} transactionService - 事务服务，用于执行数据库事务。
+   * @param {MailService} mailService - 邮件服务，用于发送邮件。
+   * @param {Logger} logger - 日志记录器实例。
+   */
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly config: ConfigService<Env>,
+    @InjectRepository(User)
+    private readonly userRepository: EntityRepository<User>,
+    @InjectRepository(Profile)
+    private readonly profileRepository: EntityRepository<Profile>,
+    @InjectRepository(Session)
+    private readonly sessionRepository: EntityRepository<Session>,
+    @InjectRepository(Otp)
+    private readonly otpRepository: EntityRepository<Otp>,
+    private readonly transactionService: TransactionService,
+    private readonly mailService: MailService,
+    private readonly logger: Logger,
+  ) {}
+
+  /**
+   * 为用户生成访问令牌和刷新令牌。
+   *
+   * @description 使用 JWT 服务生成一对令牌，包含用户的基本信息（用户名、邮箱、ID）。
+   * 访问令牌和刷新令牌使用不同的密钥和过期时间。
+   *
+   * @param {User} user - 用户实体。
+   * @returns {Promise<AuthTokensInterface>} 包含访问令牌和刷新令牌的对象。
+   */
+  async generateTokens(user: User): Promise<AuthTokensInterface> {
+    const [access_token, refresh_token] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          username: user.username,
+          email: user.email,
+          id: user.id,
+        },
+        {
+          secret: this.config.get('ACCESS_TOKEN_SECRET'),
+          expiresIn: this.config.get('ACCESS_TOKEN_EXPIRATION'),
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          username: user.username,
+          email: user.email,
+          id: user.id,
+        },
+        {
+          secret: this.config.get('REFRESH_TOKEN_SECRET'),
+          expiresIn: this.config.get('REFRESH_TOKEN_EXPIRATION'),
+        },
+      ),
+    ]);
+    return {
+      access_token,
+      refresh_token,
+    };
+  }
+
+  /**
+   * 使用标识符和密码验证用户。
+   *
+   * @description 根据邮箱或用户名查找用户，并验证密码是否正确。
+   *
+   * @param {ValidateUserDto} dto - 包含标识符和密码的验证 DTO。
+   * @returns {Promise<User>} 验证通过的用户实体（包含个人资料）。
+   * @throws {NotFoundException} 如果用户不存在。
+   * @throws {UnauthorizedException} 如果凭据无效。
+   */
+  async validateUser(dto: ValidateUserDto): Promise<User> {
+    // 使用 EntityManager 直接查询，确保 password 字段被加载
+    // hidden: true 主要用于序列化，不应该影响查询时的字段加载
+    const em = this.userRepository.getEntityManager();
+    const user = await em.findOne(
+      User,
+      {
+        $or: [{ email: dto.identifier }, { username: dto.identifier }],
+      },
+      {
+        populate: ['profile'],
+        // 不指定 fields，让 MikroORM 加载所有字段（包括 hidden 字段）
+      },
+    );
+
+    if (!user) {
+      this.logger.warn('User not found for login attempt', {
+        identifier: dto.identifier,
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 检查密码字段是否被加载
+    if (!user.password) {
+      this.logger.error('User password field is null or undefined', {
+        userId: user.id,
+        email: user.email,
+        hasPasswordProperty: 'password' in user,
+        userKeys: Object.keys(user),
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 添加详细的日志（使用 log 级别确保输出）
+    this.logger.log('Validating password', {
+      userId: user.id,
+      email: user.email,
+      passwordHashPrefix: user.password
+        ? user.password.substring(0, 20)
+        : 'null',
+      passwordHashLength: user.password ? user.password.length : 0,
+      inputPasswordLength: dto.password.length,
+    });
+
+    const isValid = await validateString(dto.password, user.password);
+    if (!isValid) {
+      this.logger.warn('Password validation failed', {
+        userId: user.id,
+        email: user.email,
+        passwordHashPrefix: user.password.substring(0, 20),
+        passwordHashLength: user.password.length,
+        inputPasswordLength: dto.password.length,
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    this.logger.log('Password validation succeeded', {
+      userId: user.id,
+      email: user.email,
+    });
+
+    return user;
+  }
+
+  /**
+   * 使用邮箱和密码注册新用户账户。
+   *
+   * @description 创建新用户账户，包括：
+   * - 验证用户名和邮箱的唯一性
+   * - 加密密码
+   * - 创建用户和个人资料记录
+   * - 生成邮箱确认 OTP
+   * - 发送注册成功和邮箱确认邮件
+   *
+   * @param {CreateUserDto} createUserDto - 创建新用户的数据。
+   * @returns {Promise<RegisterUserInterface>} 注册的用户数据。
+   * @throws {BadRequestException} 如果用户名或邮箱已存在，或注册失败。
+   */
+  async register(createUserDto: CreateUserDto): Promise<RegisterUserInterface> {
+    const email_confirmation_otp = await generateOTP();
+    try {
+      // 检查用户名和邮箱是否已存在
+      const existingUser = await this.userRepository.findOne({
+        $or: [
+          { email: createUserDto.email },
+          { username: createUserDto.email.split('@')[0] },
+        ],
+      });
+      if (existingUser) {
+        throw new BadRequestException('Username or email already exists');
+      }
+
+      const result = await this.transactionService.runInTransaction(
+        async (em: EntityManager) => {
+          // 加密密码
+          const hashedPassword = await hashString(createUserDto.password);
+          const username = createUserDto.email.split('@')[0];
+
+          // 创建用户
+          const user = new User();
+          user.email = createUserDto.email;
+          user.username = username;
+          user.password = hashedPassword;
+          em.persist(user);
+
+          // 创建个人资料
+          const profile = new Profile();
+          profile.name = extractName(createUserDto.email);
+          profile.user = user;
+          em.persist(profile);
+
+          // 创建 OTP
+          const otp = new Otp();
+          otp.otp = email_confirmation_otp;
+          otp.type = TokenTypes.EMAIL_CONFIRMATION;
+          otp.expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+          em.persist(otp);
+
+          await em.flush();
+
+          // 返回用户 ID，而不是实体对象，避免 EntityManager 引用问题
+          return { userId: user.id, profile, otp };
+        },
+      );
+
+      // 事务结束后，从主 EntityManager 重新加载用户实体
+      // 使用 refresh 确保获取最新的实体状态
+      const user = await this.userRepository.findOne(
+        { id: result.userId },
+        { populate: ['profile'] },
+      );
+
+      if (!user) {
+        throw new BadRequestException('Failed to retrieve created user');
+      }
+
+      // 确保用户实体完全加载并刷新
+      await this.userRepository.getEntityManager().refresh(user);
+
+      // 尝试发送邮件，如果失败不影响用户注册
+      try {
+        await this.mailService.sendEmail({
+          to: [user.email],
+          subject: 'Confirm your email',
+          html: RegisterSuccessMail({
+            name: user.profile?.name || extractName(user.email),
+            otp: email_confirmation_otp,
+          }),
+        });
+      } catch (mailError) {
+        // 记录邮件发送错误，但不阻止用户注册
+        this.logger.warn('Failed to send registration email', {
+          error:
+            mailError instanceof Error ? mailError.message : String(mailError),
+          email: user.email,
+        });
+        // 如果邮件配置缺失，提供更明确的错误信息
+        if (
+          mailError instanceof Error &&
+          (mailError.message.includes('auth') ||
+            mailError.message.includes('credentials') ||
+            mailError.message.includes('MAIL'))
+        ) {
+          this.logger.error(
+            'Mail service configuration error. Please check MAIL_USERNAME and MAIL_PASSWORD environment variables.',
+          );
+        }
+      }
+      return { data: user };
+    } catch (e) {
+      this.logger.error('Registration failed', {
+        error: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
+      });
+      if (e instanceof BadRequestException) {
+        throw e;
+      }
+      // 提供更详细的错误信息
+      const errorMessage =
+        e instanceof Error
+          ? e.message || 'Something went wrong!'
+          : 'Something went wrong!';
+      throw new BadRequestException(errorMessage);
+    }
+  }
+
+  /**
+   * 用户登录。
+   *
+   * @description 验证用户凭据，生成访问令牌和刷新令牌，创建会话记录，并发送登录成功邮件。
+   *
+   * @param {SignInUserDto} dto - 登录 DTO。
+   * @returns {Promise<LoginUserInterface>} 包含用户数据和令牌的登录响应。
+   * @throws {UnauthorizedException} 如果凭据无效或用户未确认邮箱。
+   */
+  async signIn(dto: SignInUserDto): Promise<LoginUserInterface> {
+    const user = await this.validateUser(dto);
+    // 允许未验证邮箱的用户登录，但会重定向到邮箱确认页面
+    // if (!user.isEmailVerified) {
+    //   throw new UnauthorizedException('Please confirm your email first');
+    // }
+    const tokens = await this.generateTokens(user);
+    const session = new Session();
+    session.user = user;
+    session.refresh_token = tokens.refresh_token;
+    session.ip = dto.ip || 'unknown';
+    session.device_name = dto.device_name || 'unknown';
+    session.device_os = dto.device_os || 'unknown';
+    session.browser = dto.browser || 'unknown';
+    session.location = dto.location || 'unknown';
+    session.userAgent = dto.userAgent || 'unknown';
+    const em = this.userRepository.getEntityManager();
+    em.persist(session);
+    await em.flush();
+
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'SignIn with your email',
+      html: SignInSuccessMail({
+        username: user.profile.name,
+        loginTime: session.createdAt,
+        ipAddress: session.ip,
+        location: session.location,
+        device: session.device_name,
+      }),
+    });
+    const session_refresh_time = await generateRefreshTime();
+    return {
+      data: user,
+      tokens: { ...tokens, session_token: session.id, session_refresh_time },
+    };
+  }
+
+  /**
+   * 确认用户邮箱。
+   *
+   * @description 使用 OTP 验证码确认用户邮箱地址，激活用户账户。
+   *
+   * @param {ConfirmEmailDto} dto - 邮箱确认 DTO。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果用户或 OTP 不存在。
+   * @throws {BadRequestException} 如果 OTP 验证码无效或已过期。
+   */
+  async confirmEmail(dto: ConfirmEmailDto): Promise<void> {
+    const user = await this.userRepository.findOne(
+      { email: dto.email },
+      { populate: ['profile'] },
+    );
+    if (!user) throw new NotFoundException('User not found');
+    const otp = await this.otpRepository.findOne({
+      otp: dto.token,
+      type: TokenTypes.EMAIL_CONFIRMATION,
+    });
+    if (!otp) throw new NotFoundException('Invalid confirmation code');
+    if (otp.otp !== dto.token)
+      throw new BadRequestException('Invalid confirmation code');
+    if (otp.expires && new Date(otp.expires) < new Date())
+      throw new BadRequestException('Email confirm token expired');
+    user.isEmailVerified = true;
+    user.emailVerifiedAt = new Date();
+    const em = this.userRepository.getEntityManager();
+    await em.flush();
+    em.remove(otp);
+    await em.flush();
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'Confirmation Successful',
+      html: ConfirmEmailSuccessMail({
+        name: user.profile.name,
+      }),
+    });
+  }
+
+  /**
+   * 重新发送邮箱确认邮件。
+   *
+   * @description 为未验证邮箱的用户重新生成并发送邮箱确认 OTP。
+   *
+   * @param {string} email - 用户邮箱地址。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果用户不存在。
+   * @throws {BadRequestException} 如果用户邮箱已验证。
+   */
+  async resendConfirmationEmail(email: string): Promise<void> {
+    const user = await this.userRepository.findOne(
+      { email },
+      { populate: ['profile'] },
+    );
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    // 生成新的 OTP
+    const email_confirmation_otp = await generateOTP();
+
+    // 删除该用户旧的 EMAIL_CONFIRMATION 类型的 OTP
+    // 注意：OTP 实体没有直接关联用户，需要通过其他方式识别
+    // 这里我们删除所有 EMAIL_CONFIRMATION 类型的 OTP，因为每个用户注册时都会创建新的
+    const em = this.userRepository.getEntityManager();
+    const oldOtps = await this.otpRepository.find({
+      type: TokenTypes.EMAIL_CONFIRMATION,
+    });
+    oldOtps.forEach((otp) => em.remove(otp));
+
+    // 创建新的 OTP
+    const otp = new Otp();
+    otp.otp = email_confirmation_otp;
+    otp.type = TokenTypes.EMAIL_CONFIRMATION;
+    otp.expires = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 小时过期
+    em.persist(otp);
+    await em.flush();
+
+    // 发送确认邮件
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'Confirm your email',
+      html: RegisterSuccessMail({
+        name: user.profile?.name || extractName(user.email),
+        otp: email_confirmation_otp,
+      }),
+    });
+  }
+
+  /**
+   * 发送密码重置邮件。
+   *
+   * @description 为忘记密码的用户发送包含 OTP 验证码的重置密码邮件。
+   *
+   * @param {ForgotPasswordDto} dto - 忘记密码 DTO。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果用户不存在。
+   */
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+    const user = await this.userRepository.findOne(
+      {
+        $or: [{ email: dto.identifier }, { username: dto.identifier }],
+      },
+      { populate: ['profile'] },
+    );
+    if (!user) throw new NotFoundException('User not found');
+    const passwordResetToken = await generateOTP();
+    const otp = new Otp();
+    otp.otp = passwordResetToken;
+    otp.type = TokenTypes.PASSWORD_RESET;
+    otp.expires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+    const em = this.userRepository.getEntityManager();
+    em.persist(otp);
+    await em.flush();
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'Reset your password',
+      html: ResetPasswordMail({
+        name: user.profile.name,
+        code: passwordResetToken,
+      }),
+    });
+  }
+
+  /**
+   * 使用重置令牌重置用户密码。
+   *
+   * @description 使用 OTP 验证码重置忘记密码的用户的密码。
+   *
+   * @param {ResetPasswordDto} dto - 重置密码 DTO。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果用户或 OTP 不存在。
+   * @throws {BadRequestException} 如果重置令牌无效或已过期。
+   */
+  async resetPassword(dto: ResetPasswordDto): Promise<void> {
+    const user = await this.userRepository.findOne(
+      {
+        $or: [{ email: dto.identifier }, { username: dto.identifier }],
+      },
+      { populate: ['profile'] },
+    );
+    if (!user) throw new NotFoundException('User not found');
+    const otp = await this.otpRepository.findOne({
+      otp: dto.resetToken,
+      type: TokenTypes.PASSWORD_RESET,
+    });
+    if (!otp) throw new NotFoundException('Invalid password reset token');
+    if (otp.otp !== dto.resetToken)
+      throw new BadRequestException('Invalid password reset token');
+    if (otp.expires && new Date() > otp.expires)
+      throw new BadRequestException('Password reset token expired');
+    user.password = await hashString(dto.newPassword);
+    const em = this.userRepository.getEntityManager();
+    await em.flush();
+    em.remove(otp);
+    await em.flush();
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'Password Reset Successful',
+      html: ChangePasswordSuccessMail({
+        name: user.profile.name,
+      }),
+    });
+  }
+
+  /**
+   * 修改用户密码。
+   *
+   * @description 已登录用户修改自己的密码，需要提供当前密码和新密码。
+   *
+   * @param {ChangePasswordDto} dto - 修改密码 DTO。
+   * @returns {Promise<void>}
+   * @throws {UnauthorizedException} 如果当前密码不正确。
+   */
+  async changePassword(dto: ChangePasswordDto): Promise<void> {
+    const user = await this.validateUser(dto);
+    user.password = await hashString(dto.newPassword);
+    const em = this.userRepository.getEntityManager();
+    await em.flush();
+    await this.mailService.sendEmail({
+      to: [user.email],
+      subject: 'Password Change Successful',
+      html: ChangePasswordSuccessMail({
+        name: user.profile.name,
+      }),
+    });
+  }
+
+  /**
+   * 用户从当前会话登出。
+   *
+   * @description 删除当前设备的会话记录，使该设备的刷新令牌失效。
+   *
+   * @param {SignOutUserDto} dto - 登出 DTO。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果会话不存在。
+   */
+  async signOut(dto: SignOutUserDto): Promise<void> {
+    const session = await this.sessionRepository.findOne({
+      id: dto.session_token,
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    const em = this.sessionRepository.getEntityManager();
+    em.remove(session);
+    await em.flush();
+  }
+
+  /**
+   * 用户从所有设备登出。
+   *
+   * @description 删除用户在所有设备上的所有会话记录，使所有刷新令牌失效。
+   *
+   * @param {SignOutAllDeviceUserDto} dto - 从所有设备登出 DTO。
+   * @returns {Promise<void>}
+   */
+  async signOutAllDevices(dto: SignOutAllDeviceUserDto): Promise<void> {
+    const em = this.sessionRepository.getEntityManager();
+    await em.nativeDelete(Session, { user: dto.userId });
+  }
+
+  /**
+   * 刷新用户的访问令牌。
+   *
+   * @description 使用有效的刷新令牌生成新的访问令牌和刷新令牌对。
+   *
+   * @param {RefreshTokenDto} dto - 刷新令牌 DTO。
+   * @returns {Promise<RefreshTokenInterface>} 包含新令牌的刷新令牌响应。
+   * @throws {NotFoundException} 如果用户或会话不存在。
+   */
+  async refreshToken(dto: RefreshTokenDto): Promise<RefreshTokenInterface> {
+    const user = await this.userRepository.findOne({ id: dto.user_id });
+    if (!user) throw new NotFoundException('User not found');
+    const { access_token, refresh_token } = await this.generateTokens(user);
+    const session = await this.sessionRepository.findOne({
+      id: dto.session_token,
+      user: dto.user_id,
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    session.refresh_token = refresh_token;
+    const access_token_refresh_time = await generateRefreshTime();
+    const em = this.sessionRepository.getEntityManager();
+    await em.flush();
+    return {
+      access_token,
+      refresh_token,
+      session_token: dto.session_token,
+      access_token_refresh_time,
+    };
+  }
+
+  /**
+   * 检索用户的所有会话。
+   *
+   * @description 获取指定用户在所有设备上的所有活动会话信息。
+   *
+   * @param {string} userId - 用户 ID。
+   * @returns {Promise<Session[]>} 用户会话列表。
+   */
+  async getSessions(userId: string): Promise<Session[]> {
+    return await this.sessionRepository.find({
+      user: userId,
+    });
+  }
+
+  /**
+   * 根据会话 ID 检索会话。
+   *
+   * @description 根据会话 ID 获取单个会话的详细信息。
+   *
+   * @param {string} id - 会话 ID。
+   * @returns {Promise<Session>} 会话实体。
+   * @throws {NotFoundException} 如果会话不存在。
+   */
+  async getSession(id: string): Promise<Session> {
+    const session = await this.sessionRepository.findOne({ id });
+    if (!session) throw new NotFoundException('Session not found!');
+    return session;
+  }
+
+  /**
+   * 删除用户账户。
+   *
+   * @description 永久删除用户账户及其所有相关数据（包括会话、OTP 等）。
+   *
+   * @param {DeleteUserDto} dto - 删除用户 DTO。
+   * @returns {Promise<void>}
+   * @throws {NotFoundException} 如果用户不存在。
+   * @throws {BadRequestException} 如果密码验证失败或删除失败。
+   */
+  async deleteAccount(dto: DeleteUserDto): Promise<void> {
+    const user = await this.userRepository.findOne({ id: dto.user_id });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.password) throw new BadRequestException('Invalid credentials');
+    const isValidPassword = await validateString(dto.password, user.password);
+    if (!isValidPassword) throw new BadRequestException('Invalid credentials');
+    try {
+      const em = this.userRepository.getEntityManager();
+      em.remove(user);
+      await em.flush();
+    } catch (e) {
+      throw new BadRequestException('Failed to delete user account');
+    }
+  }
+}
