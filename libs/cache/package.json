@@ -1,7 +1,13 @@
 {
-  "name": "@hl8/multi-tenancy",
-  "version": "0.1.0",
-  "description": "多租户上下文与隔离支撑模块，封装 CLS、拦截器与仓储基类",
+  "name": "@hl8/cache",
+  "version": "1.0.0",
+  "description": "缓存管理模块 - 支持多种缓存策略和操作",
+  "keywords": [
+    "nestjs",
+    "cache",
+    "redis",
+    "caching"
+  ],
   "type": "module",
   "exports": {
     ".": {
@@ -17,25 +23,28 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "dev": "tsc -p tsconfig.build.json --watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "lint": "eslint .",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@anchan828/nest-redlock": "^0.4.21",
     "@hl8/config": "workspace:*",
     "@hl8/exceptions": "workspace:*",
     "@hl8/logger": "workspace:*",
-    "@mikro-orm/core": "^6.5.9",
-    "@mikro-orm/nestjs": "^6.1.1",
+    "@liaoliaots/nestjs-redis": "^9.0.0",
     "@nestjs/common": "11.1.8",
     "@nestjs/core": "11.1.8",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
-    "nestjs-cls": "^6.0.1",
-    "rxjs": "7.8.2"
+    "ioredis": "^5.3.2",
+    "nestjs-cls": "^6.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
