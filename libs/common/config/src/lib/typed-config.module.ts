@@ -358,13 +358,11 @@ export class TypedConfigModule {
     // 使用 Object.create(null) 创建一个没有原型链的对象
     const cleanConfig = Object.create(null);
     // 只复制 rawConfig 的自有属性（不包括继承的属性和 process.env）
+    // 注意：配置加载器返回的配置可能包含大写键（如环境变量），这些应该被保留
+    // 只跳过明显来自 process.env 的系统属性（npm_、VSCODE_ 等）
     for (const key of Object.keys(rawConfig || {})) {
-      // 跳过看起来像环境变量的键
-      if (
-        key === key.toUpperCase() ||
-        key.startsWith('npm_') ||
-        key.startsWith('VSCODE_')
-      ) {
+      // 只跳过明显来自 process.env 的系统属性，不跳过配置加载器返回的大写键
+      if (key.startsWith('npm_') || key.startsWith('VSCODE_')) {
         continue;
       }
       cleanConfig[key] = rawConfig[key];
