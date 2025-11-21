@@ -21,6 +21,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "eslint .",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
+    "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

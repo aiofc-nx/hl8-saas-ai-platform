@@ -79,7 +79,7 @@ export class TenantEnforceInterceptor implements NestInterceptor {
     const tenantId =
       request.tenantId ?? headerTenantId ?? request.user?.tenantId;
 
-    if (!tenantId || typeof tenantId !== 'string') {
+    if (!tenantId || typeof tenantId !== 'string' || tenantId.trim() === '') {
       this.logger.error('缺少租户上下文，拒绝继续处理请求');
       throw new GeneralUnauthorizedException('缺少租户上下文');
     }
