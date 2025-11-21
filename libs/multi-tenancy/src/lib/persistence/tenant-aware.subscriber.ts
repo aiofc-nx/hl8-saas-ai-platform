@@ -31,7 +31,7 @@ export class TenantAwareSubscriber
   constructor(
     private readonly tenantExecutor: TenantContextExecutor,
     private readonly logger: LoggerService,
-    @InjectEntityManager() entityManager: EntityManager,
+    @InjectEntityManager('postgres') entityManager: EntityManager,
     @Optional() private readonly options?: TenantAwareSubscriberOptions,
   ) {
     entityManager.getEventManager().registerSubscriber(this);

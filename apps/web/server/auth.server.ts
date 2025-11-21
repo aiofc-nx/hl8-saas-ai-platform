@@ -33,6 +33,12 @@ import { redirect } from 'next/navigation';
  * @returns 返回用户对象，如果登录失败则返回 null
  * @throws 如果网络请求失败或响应数据格式错误，会在控制台输出错误信息并返回 null
  */
+/**
+ * @description 解析并发送基于凭证的登录请求（包含设备信息）到后端
+ * @param credentials - 登录凭证对象，包含标识符（邮箱或用户名）和密码
+ * @returns 返回用户对象，如果登录失败则返回 null
+ * @throws 如果网络请求失败或响应数据格式错误，会在控制台输出错误信息并返回 null
+ */
 export const authorizeSignIn = async (
   credentials: SignIn,
 ): Promise<null | User> => {
@@ -94,15 +100,49 @@ export const authorizeSignIn = async (
  * @throws {Error} 当凭证无效时抛出 "Invalid credentials." 错误
  * @throws {AuthError} 当认证过程中出现错误时抛出相应的认证错误
  */
+/**
+ * @description 使用凭证进行 UI 登录操作的服务器动作
+ * @schema SignInSchema
+ * @remarks
+ * - 先验证用户凭证并获取用户信息
+ * - 根据邮箱验证状态进行相应重定向
+ * - 未验证邮箱的用户重定向到邮箱确认页面
+ * - 已验证邮箱的用户重定向到首页
+ * @throws {Error} 当凭证无效时抛出后端返回的具体错误信息
+ * @throws {AuthError} 当认证过程中出现错误时抛出相应的认证错误
+ */
 export const signInWithCredentials = safeAction
   .schema(SignInSchema)
   .action(async ({ parsedInput }) => {
     try {
       // 先获取登录后的用户信息，以判断邮箱验证状态
-      const user = await authorizeSignIn(parsedInput);
+      const deviceInfo = await getDeviceInfo();
+      const [error, data] = await safeFetch(SignInDataSchema, '/auth/sign-in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+        body: JSON.stringify({
+          ...parsedInput,
+          ...deviceInfo,
+        }),
+      });
 
-      if (!user) {
-        throw new Error('Invalid credentials.');
+      // 如果请求失败，抛出后端返回的具体错误信息
+      if (error) {
+        throw new Error(error);
+      }
+
+      if (!data) {
+        throw new Error('登录失败，请稍后重试');
+      }
+
+      const { data: user, tokens } = data;
+
+      if (!user || !tokens) {
+        throw new Error('登录响应数据不完整，请稍后重试');
       }
 
       // 登录用户（signIn 会抛出重定向错误，这是正常的）
@@ -125,11 +165,11 @@ export const signInWithCredentials = safeAction
       // 处理认证错误
       if (error instanceof AuthError) {
         if (error.type === 'CredentialsSignin') {
-          throw new Error('Invalid credentials.');
+          throw new Error('用户名或密码错误');
         }
-        throw new Error('Something went wrong.');
+        throw new Error('登录过程中发生错误，请稍后重试');
       }
-      // 其他未知错误
+      // 其他未知错误（包括后端返回的错误信息）
       throw error;
     }
   });
