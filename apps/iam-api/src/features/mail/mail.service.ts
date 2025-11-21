@@ -43,15 +43,49 @@ export class MailService {
    * });
    * ```
    */
+  /**
+   * 发送邮件。
+   *
+   * @description 使用配置的邮件服务发送邮件。
+   * 自动设置发件人地址，并记录发送过程中的错误。
+   * 对于QQ邮箱等严格验证发件人地址的服务，使用纯邮箱地址作为发件人。
+   *
+   * @param {ISendMailOptions} mailOptions - 邮件选项，包括收件人、主题、内容等。
+   * @returns {Promise<void>} 发送成功时返回，失败时抛出异常。
+   * @throws {Error} 当邮件发送失败时抛出错误。
+   *
+   * @example
+   * ```typescript
+   * await mailService.sendEmail({
+   *   to: ['user@example.com'],
+   *   subject: 'Welcome',
+   *   html: '<h1>Welcome!</h1>',
+   * });
+   * ```
+   */
   async sendEmail(mailOptions: ISendMailOptions): Promise<void> {
     try {
+      // 检测是否为QQ邮箱或其他需要严格验证发件人地址的服务
+      const isQQMail = this.config.MAIL_USERNAME.includes('@qq.com');
+      const is163Mail =
+        this.config.MAIL_USERNAME.includes('@163.com') ||
+        this.config.MAIL_USERNAME.includes('@126.com');
+      const isStrictMail = isQQMail || is163Mail;
+
+      // 对于QQ邮箱和163邮箱，使用纯邮箱地址作为发件人，避免退信
+      // 其他邮箱服务可以使用带名称的格式
+      const fromAddress = isStrictMail
+        ? this.config.MAIL_USERNAME
+        : `${APP_NAME} <${this.config.MAIL_USERNAME}>`;
+
       await this.mailerService.sendMail({
-        from: `${APP_NAME}<${this.config.MAIL_USERNAME}>`,
+        from: fromAddress,
         ...mailOptions,
       });
       this.logger.debug('邮件发送成功', {
         to: mailOptions.to,
         subject: mailOptions.subject,
+        from: fromAddress,
       });
     } catch (error) {
       this.logger.error('邮件发送失败', {

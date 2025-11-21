@@ -1,7 +1,7 @@
 import { EnvConfig } from '@/common/utils/validateEnv';
 import { Session } from '@/features/auth/entities/session.entity';
 import { GeneralUnauthorizedException } from '@hl8/exceptions';
-import { InjectRepository } from '@mikro-orm/nestjs';
+import { InjectRepository } from '@hl8/mikro-orm-nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';

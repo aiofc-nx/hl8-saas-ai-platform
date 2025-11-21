@@ -1,5 +1,5 @@
 import { GeneralNotFoundException } from '@hl8/exceptions';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { getRepositoryToken } from '@hl8/mikro-orm-nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Profile } from './entities/profile.entity';

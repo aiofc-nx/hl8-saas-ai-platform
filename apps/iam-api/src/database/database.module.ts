@@ -1,5 +1,5 @@
 import { EnvConfig } from '@/common/utils/validateEnv';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { MikroOrmModule } from '@hl8/mikro-orm-nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { Module } from '@nestjs/common';
 import { TransactionService } from './transaction.service';

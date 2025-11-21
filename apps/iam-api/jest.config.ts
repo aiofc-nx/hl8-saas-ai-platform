@@ -27,6 +27,8 @@ export default {
       '<rootDir>/../../../libs/common/exceptions/src/index.ts',
     '^@hl8/logger$': '<rootDir>/../../../libs/common/logger/src/index.ts',
     '^@hl8/config$': '<rootDir>/../../../libs/common/config/src/index.ts',
+    '^@hl8/mikro-orm-nestjs$':
+      '<rootDir>/../../../libs/mikro-orm-nestjs/src/index.ts',
     // 处理 @hl8 包内部的 .js 扩展名导入（NodeNext 模块系统要求）
     '^(\\.{1,2}/.*)\\.js$': '$1',
     // 处理 @hl8 包中的相对路径 .js 导入
@@ -34,6 +36,8 @@ export default {
       '<rootDir>/../../../libs/common/exceptions/src/$1',
     '^@hl8/logger/(.*)\\.js$': '<rootDir>/../../../libs/common/logger/src/$1',
     '^@hl8/config/(.*)\\.js$': '<rootDir>/../../../libs/common/config/src/$1',
+    '^@hl8/mikro-orm-nestjs/(.*)\\.js$':
+      '<rootDir>/../../../libs/mikro-orm-nestjs/src/$1',
   },
   transformIgnorePatterns: [
     // 排除 node_modules，但包含 @repo 和 @hl8 包进行转换

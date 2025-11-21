@@ -1,6 +1,6 @@
 import { User } from '@/features/users/entities/user.entity';
 import { GeneralNotFoundException } from '@hl8/exceptions';
-import { InjectRepository } from '@mikro-orm/nestjs';
+import { InjectRepository } from '@hl8/mikro-orm-nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 

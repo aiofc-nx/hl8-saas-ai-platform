@@ -53,7 +53,13 @@ const PREDEFINED_SERVICES = [
           : {
               host: mailHost,
               port: config.MAIL_PORT,
-              secure: config.MAIL_SECURE,
+              secure: config.MAIL_SECURE, // true 用于 465 端口，false 用于 587 端口（STARTTLS）
+              // 对于 587 端口（secure: false），需要明确启用 STARTTLS
+              requireTLS: !config.MAIL_SECURE && config.MAIL_PORT === 587,
+              // 忽略证书验证错误（仅用于开发环境，生产环境应使用有效证书）
+              tls: {
+                rejectUnauthorized: false,
+              },
               auth: {
                 user: config.MAIL_USERNAME,
                 pass: config.MAIL_PASSWORD,
