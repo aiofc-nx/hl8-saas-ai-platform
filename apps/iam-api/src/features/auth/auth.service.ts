@@ -44,7 +44,7 @@ import {
   GeneralUnauthorizedException,
 } from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
-import { InjectRepository } from '@mikro-orm/nestjs';
+import { InjectRepository } from '@hl8/mikro-orm-nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -381,17 +381,41 @@ export class AuthService {
     em.persist(session);
     await em.flush();
 
-    await this.mailService.sendEmail({
-      to: [user.email],
-      subject: 'SignIn with your email',
-      html: SignInSuccessMail({
-        username: user.profile.name,
-        loginTime: session.createdAt,
-        ipAddress: session.ip,
-        location: session.location,
-        device: session.device_name,
-      }),
-    });
+    // 尝试发送邮件，如果失败不影响用户登录
+    try {
+      await this.mailService.sendEmail({
+        to: [user.email],
+        subject: 'SignIn with your email',
+        html: SignInSuccessMail({
+          username: user.profile.name,
+          loginTime: session.createdAt,
+          ipAddress: session.ip,
+          location: session.location,
+          device: session.device_name,
+        }),
+      });
+    } catch (mailError) {
+      // 记录邮件发送错误，但不阻止用户登录
+      this.logger.warn('Failed to send sign-in success email', {
+        error:
+          mailError instanceof Error ? mailError.message : String(mailError),
+        email: user.email,
+        userId: user.id,
+      });
+      // 如果邮件配置缺失，提供更明确的错误信息
+      if (
+        mailError instanceof Error &&
+        (mailError.message.includes('SSL') ||
+          mailError.message.includes('wrong version number') ||
+          mailError.message.includes('auth') ||
+          mailError.message.includes('credentials') ||
+          mailError.message.includes('MAIL'))
+      ) {
+        this.logger.error(
+          'Mail service configuration error. Please check MAIL_HOST, MAIL_PORT, MAIL_SECURE, MAIL_USERNAME and MAIL_PASSWORD environment variables.',
+        );
+      }
+    }
     const session_refresh_time = await generateRefreshTime();
     return {
       data: user,

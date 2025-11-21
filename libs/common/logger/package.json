@@ -7,17 +7,10 @@
     "logging",
     "logger"
   ],
-  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
-    "./index.js": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "require": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -45,7 +38,7 @@
     "pino-http": "^10.4.0",
     "pino-pretty": "^13.1.2",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",

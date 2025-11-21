@@ -15,7 +15,7 @@ export interface MessageResponse {
  *
  * @property {string} message - 响应消息。
  * @property {Omit<User, 'password' | 'sessions'>} data - 用户数据（排除敏感字段）。
- * @property {{ access_token: string; refresh_token: string }} tokens - 认证令牌。
+ * @property {{ access_token: string; refresh_token: string; session_token: string; session_refresh_time: string }} tokens - 认证令牌。
  */
 export interface SignInResponse {
   message: string;
@@ -23,6 +23,8 @@ export interface SignInResponse {
   tokens: {
     access_token: string;
     refresh_token: string;
+    session_token: string;
+    session_refresh_time: string;
   };
 }
 

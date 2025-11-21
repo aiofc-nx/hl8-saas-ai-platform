@@ -1,5 +1,5 @@
 import { User } from '@/features/users/entities/user.entity';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { getRepositoryToken } from '@hl8/mikro-orm-nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { HttpModule } from '@nestjs/axios';
 import {

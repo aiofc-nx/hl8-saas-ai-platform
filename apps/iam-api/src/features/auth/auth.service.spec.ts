@@ -10,7 +10,7 @@ import {
   GeneralUnauthorizedException,
 } from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { getRepositoryToken } from '@hl8/mikro-orm-nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';

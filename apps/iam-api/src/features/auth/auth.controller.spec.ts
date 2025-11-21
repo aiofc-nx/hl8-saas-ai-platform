@@ -1,7 +1,7 @@
 import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
 import { EnvConfig } from '@/common/utils/validateEnv';
 import { User } from '@/features/users/entities/user.entity';
-import { getRepositoryToken } from '@mikro-orm/nestjs';
+import { getRepositoryToken } from '@hl8/mikro-orm-nestjs';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';

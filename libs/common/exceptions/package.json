@@ -8,16 +8,9 @@
     "error-handling",
     "error-management"
   ],
-  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./index.js": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
   },

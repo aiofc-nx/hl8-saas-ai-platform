@@ -78,8 +78,12 @@ export const safeFetch = async <T extends ZodSchema<unknown>>(
       if (typeof res === 'object' && res !== null) {
         const errorObj = res as Record<string, unknown>;
 
+        // 优先使用 detail 字段（@hl8/exceptions 的错误格式）
+        if (errorObj.detail && typeof errorObj.detail === 'string') {
+          errorMessage = errorObj.detail;
+        }
         // NestJS ValidationPipe 返回的错误格式
-        if (errorObj.message) {
+        else if (errorObj.message) {
           if (Array.isArray(errorObj.message)) {
             errorMessage = errorObj.message.join(', ');
           } else if (typeof errorObj.message === 'string') {
