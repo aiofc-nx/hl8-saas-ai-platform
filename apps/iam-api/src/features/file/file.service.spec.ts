@@ -236,7 +236,9 @@ describe('FileService', () => {
       });
 
       // 执行测试并验证异常
-      await expect(service.deleteFiles(filePaths)).rejects.toThrow(error);
+      await expect(service.deleteFiles(filePaths)).rejects.toThrow(
+        '批量文件删除失败，请稍后重试',
+      );
       expect(logger.error).toHaveBeenCalledWith(error);
     });
   });

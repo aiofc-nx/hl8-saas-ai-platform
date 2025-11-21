@@ -4,14 +4,14 @@ import { TransactionService } from '@/database';
 import { MailService } from '@/features/mail/mail.service';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
+import {
+  GeneralBadRequestException,
+  GeneralNotFoundException,
+  GeneralUnauthorizedException,
+} from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
-import {
-  BadRequestException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
@@ -280,10 +280,10 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.validateUser(dto)).rejects.toThrow(
-        UnauthorizedException,
+        GeneralUnauthorizedException,
       );
       await expect(service.validateUser(dto)).rejects.toThrow(
-        'Invalid credentials',
+        '用户名或密码错误',
       );
     });
 
@@ -306,7 +306,7 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.validateUser(dto)).rejects.toThrow(
-        UnauthorizedException,
+        GeneralUnauthorizedException,
       );
     });
   });
@@ -371,10 +371,10 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.register(createUserDto)).rejects.toThrow(
-        BadRequestException,
+        GeneralBadRequestException,
       );
       await expect(service.register(createUserDto)).rejects.toThrow(
-        'Username or email already exists',
+        '注册失败，用户名或邮箱已被使用',
       );
     });
   });
@@ -470,7 +470,7 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.confirmEmail(dto)).rejects.toThrow(
-        NotFoundException,
+        GeneralNotFoundException,
       );
     });
 
@@ -491,7 +491,7 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.confirmEmail(dto)).rejects.toThrow(
-        NotFoundException,
+        GeneralNotFoundException,
       );
     });
   });
@@ -549,7 +549,7 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.refreshToken(dto)).rejects.toThrow(
-        NotFoundException,
+        GeneralNotFoundException,
       );
     });
   });
@@ -585,7 +585,9 @@ describe('AuthService', () => {
       sessionRepository.findOne = jest.fn().mockResolvedValue(null);
 
       // 执行测试并验证异常
-      await expect(service.signOut(dto)).rejects.toThrow(NotFoundException);
+      await expect(service.signOut(dto)).rejects.toThrow(
+        GeneralNotFoundException,
+      );
     });
   });
 
@@ -638,7 +640,7 @@ describe('AuthService', () => {
 
       // 执行测试并验证异常
       await expect(service.getSession(sessionId)).rejects.toThrow(
-        NotFoundException,
+        GeneralNotFoundException,
       );
     });
   });

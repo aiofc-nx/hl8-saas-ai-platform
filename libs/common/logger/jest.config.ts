@@ -24,7 +24,7 @@ export default {
     ],
   },
   moduleFileExtensions: ['ts', 'js'],
-  coverageDirectory: '../../coverage/libs/logger',
+  coverageDirectory: '../../../coverage/libs/logger',
   testMatch: ['**/*.spec.ts'],
   passWithNoTests: true,
 };

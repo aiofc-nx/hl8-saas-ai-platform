@@ -1,6 +1,6 @@
+import { GeneralNotFoundException } from '@hl8/exceptions';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Profile } from './entities/profile.entity';
 import { User } from './entities/user.entity';
@@ -123,11 +123,9 @@ describe('UsersService', () => {
 
       // 执行测试并验证异常
       await expect(service.findOne(identifier)).rejects.toThrow(
-        NotFoundException,
+        GeneralNotFoundException,
       );
-      await expect(service.findOne(identifier)).rejects.toThrow(
-        'User not found.',
-      );
+      await expect(service.findOne(identifier)).rejects.toThrow('用户不存在');
       expect(userRepository.findOne).toHaveBeenCalledWith(
         { username: identifier },
         { populate: ['profile'] },

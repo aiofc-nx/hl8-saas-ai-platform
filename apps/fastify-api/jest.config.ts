@@ -1,6 +1,6 @@
 export default {
   collectCoverageFrom: ['**/*.(t|j)s'],
-  coverageDirectory: '../coverage',
+  coverageDirectory: '../../../coverage/apps/fastify-api',
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
   testEnvironment: 'node',

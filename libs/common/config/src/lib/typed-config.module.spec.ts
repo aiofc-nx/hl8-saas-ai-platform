@@ -16,7 +16,7 @@
  */
 
 import { beforeEach, describe, expect, it } from '@jest/globals';
-import { Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
   IsNumber,
   IsOptional,
@@ -35,19 +35,23 @@ import { TypedConfigModule } from './typed-config.module.js';
  * 测试用的数据库配置类
  */
 class DatabaseConfig {
+  @Expose()
   @IsString()
   host!: string;
 
+  @Expose()
   @IsNumber()
   @Type(() => Number)
   @Min(1)
   @Max(65535)
   port!: number;
 
+  @Expose()
   @IsString()
   @IsOptional()
   username?: string;
 
+  @Expose()
   @IsString()
   @IsOptional()
   password?: string;
@@ -57,9 +61,11 @@ class DatabaseConfig {
  * 测试用的服务器配置类
  */
 class ServerConfig {
+  @Expose()
   @IsString()
   host!: string;
 
+  @Expose()
   @IsNumber()
   @Type(() => Number)
   @Min(1)
@@ -71,10 +77,12 @@ class ServerConfig {
  * 测试用的根配置类
  */
 class RootConfig {
+  @Expose()
   @ValidateNested()
   @Type(() => DatabaseConfig)
   database!: DatabaseConfig;
 
+  @Expose()
   @ValidateNested()
   @Type(() => ServerConfig)
   server!: ServerConfig;

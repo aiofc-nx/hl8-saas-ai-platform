@@ -26,7 +26,7 @@ export default {
     ],
   },
   moduleFileExtensions: ['ts', 'js'],
-  coverageDirectory: '../../coverage/libs/config',
+  coverageDirectory: '../../../coverage/libs/config',
   testMatch: ['**/*.spec.ts'],
   collectCoverageFrom: ['**/*.(t|j)s'],
   transformIgnorePatterns: ['node_modules/(?!(@repo)/)'],

@@ -24,7 +24,7 @@ export default {
     ],
   },
   moduleFileExtensions: ['ts', 'js'],
-  coverageDirectory: '../../coverage/libs/exceptions',
+  coverageDirectory: '../../../coverage/libs/exceptions',
   testMatch: ['**/*.spec.ts'],
   passWithNoTests: true,
 };

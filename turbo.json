@@ -30,6 +30,10 @@
     "test": {
       "cache": false,
       "dependsOn": ["^test"]
+    },
+    "test:cov": {
+      "cache": false,
+      "dependsOn": ["^test:cov"]
     }
   }
 }

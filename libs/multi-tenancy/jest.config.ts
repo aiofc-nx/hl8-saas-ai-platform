@@ -12,7 +12,7 @@ export default {
     '!src/**/*.d.ts',
     '!src/index.ts',
   ],
-  coverageDirectory: './coverage',
+  coverageDirectory: '../../coverage/libs/multi-tenancy',
   coverageReporters: ['text', 'lcov', 'html'],
   transform: {
     '^.+\\.ts$': [
