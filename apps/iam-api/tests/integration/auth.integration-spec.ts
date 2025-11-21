@@ -1,4 +1,3 @@
-import { AppModule } from '@/app.module';
 import { AuthService } from '@/features/auth/auth.service';
 import { CreateUserDto } from '@/features/auth/dto';
 import { Session } from '@/features/auth/entities/session.entity';
@@ -12,7 +11,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
+import { TestAppModule } from './test-module.helper';
 
 /**
  * 认证流程集成测试套件。
@@ -27,34 +27,55 @@ import * as request from 'supertest';
 describe('Auth Integration (e2e)', () => {
   let app: INestApplication;
   let authService: AuthService;
-  let usersService: UsersService;
+  let _usersService: UsersService;
   let orm: MikroORM;
   let testUserEmail: string;
   let testUserPassword: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(MailService)
-      .useValue({
-        sendEmail: jest.fn().mockResolvedValue(undefined),
+    try {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [TestAppModule],
       })
-      .compile();
+        .overrideProvider(MailService)
+        .useValue({
+          sendEmail: jest.fn().mockResolvedValue(undefined),
+        })
+        .compile();
 
-    app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+      app = moduleFixture.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+      );
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
 
-    authService = moduleFixture.get<AuthService>(AuthService);
-    usersService = moduleFixture.get<UsersService>(UsersService);
-    orm = moduleFixture.get<MikroORM>(MikroORM);
+      authService = moduleFixture.get<AuthService>(AuthService);
+      _usersService = moduleFixture.get<UsersService>(UsersService);
+      orm = moduleFixture.get<MikroORM>(MikroORM);
 
-    // 生成唯一的测试用户邮箱
-    testUserEmail = `test-${Date.now()}@example.com`;
-    testUserPassword = 'TestPassword123!';
+      // 验证服务是否正确注入
+      if (!authService) {
+        throw new Error('AuthService 未正确注入。请检查模块配置和数据库连接。');
+      }
+      if (!orm) {
+        throw new Error('MikroORM 未正确注入。请检查数据库连接配置。');
+      }
+
+      // 生成唯一的测试用户邮箱
+      testUserEmail = `test-${Date.now()}@example.com`;
+      testUserPassword = 'TestPassword123!';
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('password authentication failed')) {
+        throw new Error(
+          `数据库认证失败。请检查数据库密码是否正确。\n` +
+            `提示：设置 DB_PASSWORD 环境变量，例如：DB_PASSWORD=your_password pnpm test:integration\n` +
+            `原始错误：${errorMessage}`,
+        );
+      }
+      throw error;
+    }
   }, 60000); // 增加超时时间到 60 秒
 
   afterAll(async () => {
@@ -80,7 +101,7 @@ describe('Auth Integration (e2e)', () => {
           // 清理用户
           await em.removeAndFlush(testUser);
         }
-      } catch (error) {
+      } catch (_error) {
         // 忽略清理错误
       }
     }
@@ -154,11 +175,16 @@ describe('Auth Integration (e2e)', () => {
   });
 
   describe('API 端点集成测试', () => {
-    let accessToken: string;
-    let sessionToken: string;
+    let _accessToken: string;
+    let _sessionToken: string;
     let apiTestUserEmail: string;
 
     beforeAll(async () => {
+      // 验证 authService 是否可用
+      if (!authService) {
+        throw new Error('AuthService 未初始化。请检查数据库连接和模块配置。');
+      }
+
       // 使用不同的邮箱避免与前面的测试冲突
       apiTestUserEmail = `test-api-${Date.now()}@example.com`;
 
@@ -179,8 +205,8 @@ describe('Auth Integration (e2e)', () => {
         userAgent: 'Test User Agent',
       });
 
-      accessToken = loginResult.tokens.access_token;
-      sessionToken = loginResult.tokens.session_token;
+      _accessToken = loginResult.tokens.access_token;
+      _sessionToken = loginResult.tokens.session_token;
     }, 60000);
 
     it('应该能够通过 API 获取用户信息', async () => {

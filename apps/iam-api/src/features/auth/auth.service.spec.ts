@@ -1,8 +1,10 @@
 import * as utils from '@/common/utils';
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { TransactionService } from '@/database';
 import { MailService } from '@/features/mail/mail.service';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
+import { Logger } from '@hl8/logger';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import {
@@ -10,10 +12,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from 'nestjs-pino';
 import { AuthService } from './auth.service';
 import {
   ConfirmEmailDto,
@@ -55,7 +55,7 @@ jest.mock('@/common/utils', () => ({
 describe('AuthService', () => {
   let service: AuthService;
   let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
+  let config: EnvConfig;
   let userRepository: jest.Mocked<EntityRepository<User>>;
   let profileRepository: jest.Mocked<EntityRepository<Profile>>;
   let sessionRepository: jest.Mocked<EntityRepository<Session>>;
@@ -104,17 +104,12 @@ describe('AuthService', () => {
       signAsync: jest.fn(),
     } as unknown as jest.Mocked<JwtService>;
 
-    configService = {
-      get: jest.fn((key: string) => {
-        const config: Record<string, string> = {
-          ACCESS_TOKEN_SECRET: 'test-access-secret',
-          ACCESS_TOKEN_EXPIRATION: '15m',
-          REFRESH_TOKEN_SECRET: 'test-refresh-secret',
-          REFRESH_TOKEN_EXPIRATION: '7d',
-        };
-        return config[key];
-      }),
-    } as unknown as jest.Mocked<ConfigService>;
+    config = {
+      ACCESS_TOKEN_SECRET: 'test-access-secret',
+      ACCESS_TOKEN_EXPIRATION: '15m',
+      REFRESH_TOKEN_SECRET: 'test-refresh-secret',
+      REFRESH_TOKEN_EXPIRATION: '7d',
+    } as EnvConfig;
 
     transactionService = {
       runInTransaction: jest.fn(),
@@ -138,8 +133,8 @@ describe('AuthService', () => {
           useValue: jwtService,
         },
         {
-          provide: ConfigService,
-          useValue: configService,
+          provide: EnvConfig,
+          useValue: config,
         },
         {
           provide: getRepositoryToken(User),

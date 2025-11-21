@@ -7,6 +7,7 @@ import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { config } = require('dotenv');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { resolve } = require('path');
   config({ path: resolve(__dirname, '../.env') });
 } catch {

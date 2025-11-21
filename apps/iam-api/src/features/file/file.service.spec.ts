@@ -1,6 +1,6 @@
-import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '@/common/utils/validateEnv';
+import { Logger } from '@hl8/logger';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from 'nestjs-pino';
 import { FileService } from './file.service';
 
 // Mock 工具函数模块
@@ -27,14 +27,14 @@ import * as s3Utils from '@/common/utils/file-s3';
  */
 describe('FileService', () => {
   let service: FileService;
-  let configService: jest.Mocked<ConfigService>;
+  let config: EnvConfig;
   let logger: jest.Mocked<Logger>;
 
   beforeEach(async () => {
-    // 创建模拟的 ConfigService
-    configService = {
-      get: jest.fn().mockReturnValue('public'), // 默认使用 public
-    } as unknown as jest.Mocked<ConfigService>;
+    // 创建模拟的 EnvConfig
+    config = {
+      FILE_SYSTEM: 'public',
+    } as EnvConfig;
 
     // 创建模拟的 Logger
     logger = {
@@ -45,8 +45,8 @@ describe('FileService', () => {
       providers: [
         FileService,
         {
-          provide: ConfigService,
-          useValue: configService,
+          provide: EnvConfig,
+          useValue: config,
         },
         {
           provide: Logger,
@@ -79,12 +79,12 @@ describe('FileService', () => {
         filepath: 'test.png',
       };
 
-      configService.get.mockReturnValue('public');
+      config.FILE_SYSTEM = 'public';
       // 重新创建服务实例以应用新的配置
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           FileService,
-          { provide: ConfigService, useValue: configService },
+          { provide: EnvConfig, useValue: config },
           { provide: Logger, useValue: logger },
         ],
       }).compile();
@@ -113,12 +113,12 @@ describe('FileService', () => {
         filepath: 'test.png',
       };
 
-      configService.get.mockReturnValue('s3');
+      config.FILE_SYSTEM = 's3';
       // 重新创建服务实例以应用新的配置
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           FileService,
-          { provide: ConfigService, useValue: configService },
+          { provide: EnvConfig, useValue: config },
           { provide: Logger, useValue: logger },
         ],
       }).compile();
@@ -141,12 +141,12 @@ describe('FileService', () => {
       // 准备测试数据
       const filePath = 'test.png';
 
-      configService.get.mockReturnValue('public');
+      config.FILE_SYSTEM = 'public';
       // 重新创建服务实例以应用新的配置
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           FileService,
-          { provide: ConfigService, useValue: configService },
+          { provide: EnvConfig, useValue: config },
           { provide: Logger, useValue: logger },
         ],
       }).compile();
@@ -166,12 +166,12 @@ describe('FileService', () => {
       const filePath = 'test.png';
       const error = new Error('删除失败');
 
-      configService.get.mockReturnValue('public');
+      config.FILE_SYSTEM = 'public';
       // 重新创建服务实例以应用新的配置
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           FileService,
-          { provide: ConfigService, useValue: configService },
+          { provide: EnvConfig, useValue: config },
           { provide: Logger, useValue: logger },
         ],
       }).compile();
@@ -194,12 +194,12 @@ describe('FileService', () => {
         { status: 'fulfilled' as const, value: undefined },
       ];
 
-      configService.get.mockReturnValue('public');
+      config.FILE_SYSTEM = 'public';
       // 重新创建服务实例以应用新的配置
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           FileService,
-          { provide: ConfigService, useValue: configService },
+          { provide: EnvConfig, useValue: config },
           { provide: Logger, useValue: logger },
         ],
       }).compile();
@@ -219,12 +219,12 @@ describe('FileService', () => {
       const filePaths = ['test1.png', 'test2.png'];
       const error = new Error('批量删除失败');
 
-      configService.get.mockReturnValue('public');
+      config.FILE_SYSTEM = 'public';
       // 重新创建服务实例以应用新的配置
       const module: TestingModule = await Test.createTestingModule({
         providers: [
           FileService,
-          { provide: ConfigService, useValue: configService },
+          { provide: EnvConfig, useValue: config },
           { provide: Logger, useValue: logger },
         ],
       }).compile();

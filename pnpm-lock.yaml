@@ -255,6 +255,15 @@ importers:
       '@fastify/static':
         specifier: ^8.3.0
         version: 8.3.0
+      '@hl8/config':
+        specifier: workspace:*
+        version: link:../../libs/common/config
+      '@hl8/exceptions':
+        specifier: workspace:*
+        version: link:../../libs/common/exceptions
+      '@hl8/logger':
+        specifier: workspace:*
+        version: link:../../libs/common/logger
       '@mikro-orm/core':
         specifier: ^6.6.0
         version: 6.6.0
@@ -334,9 +343,6 @@ importers:
       '@nestjs/cli':
         specifier: ^11.0.12
         version: 11.0.12(@swc/cli@0.7.9(@swc/core@1.15.2)(chokidar@4.0.3))(@swc/core@1.15.2)(@types/node@24.10.1)
-      '@nestjs/config':
-        specifier: ^4.0.2
-        version: 4.0.2(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/jwt':
         specifier: ^11.0.1
         version: 11.0.1(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))
@@ -400,9 +406,6 @@ importers:
       jest:
         specifier: ^30.2.0
         version: 30.2.0(@types/node@24.10.1)(ts-node@10.9.2(@swc/core@1.15.2)(@types/node@24.10.1)(typescript@5.9.3))
-      nestjs-pino:
-        specifier: ^4.4.1
-        version: 4.4.1(@nestjs/common@11.1.9(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(pino-http@10.5.0)(pino@10.1.0)(rxjs@7.8.2)
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
@@ -538,7 +541,7 @@ importers:
         version: 12.0.1
       js-yaml:
         specifier: ^4.1.0
-        version: 4.1.0
+        version: 4.1.1
       lodash.merge:
         specifier: ^4.6.2
         version: 4.6.2
@@ -682,12 +685,18 @@ importers:
       pino:
         specifier: ^10.1.0
         version: 10.1.0
+      pino-http:
+        specifier: ^10.4.0
+        version: 10.5.0
       pino-pretty:
         specifier: ^13.1.2
         version: 13.1.2
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
     devDependencies:
       '@jest/globals':
         specifier: ^30.2.0
@@ -7458,10 +7467,6 @@ packages:
 
   js-yaml@3.14.1:
     resolution: {integrity: sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g==}
-    hasBin: true
-
-  js-yaml@4.1.0:
-    resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
     hasBin: true
 
   js-yaml@4.1.1:
@@ -17862,10 +17867,6 @@ snapshots:
     dependencies:
       argparse: 1.0.10
       esprima: 4.0.1
-
-  js-yaml@4.1.0:
-    dependencies:
-      argparse: 2.0.1
 
   js-yaml@4.1.1:
     dependencies:

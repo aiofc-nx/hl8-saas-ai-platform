@@ -81,7 +81,7 @@ export class AuthController {
   @Post('sign-in')
   async signIn(@Body() signInUserDto: SignInUserDto): Promise<SignInResponse> {
     const data = await this.authService.signIn(signInUserDto);
-    const { password, sessions, ...result } = data.data;
+    const { password: _password, sessions: _sessions, ...result } = data.data;
 
     return {
       message: 'User signed in successfully',

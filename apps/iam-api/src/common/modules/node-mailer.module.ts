@@ -1,7 +1,6 @@
-import { Env } from '@/common/utils';
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 
 /**
  * 预定义的邮件服务名称列表。
@@ -25,7 +24,7 @@ const PREDEFINED_SERVICES = [
  *
  * @description 配置和提供基于 Nodemailer 的邮件服务。
  * 使用环境变量设置邮件传输配置，支持预定义服务名和自定义 SMTP 服务器。
- * 与 NestJS ConfigModule 集成，实现动态配置。
+ * 与 TypedConfigModule 集成，实现动态配置。
  *
  * 配置逻辑：
  * - 如果 MAIL_HOST 是预定义服务名（如 'gmail', 'outlook'），使用 service 字段
@@ -34,11 +33,10 @@ const PREDEFINED_SERVICES = [
 @Module({
   imports: [
     MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService<Env>) => {
-        const isTest = config.get('NODE_ENV') === 'test';
-        const mailHost = config.get('MAIL_HOST');
+      inject: [EnvConfig],
+      useFactory: (config: EnvConfig) => {
+        const isTest = config.NODE_ENV === 'test';
+        const mailHost = config.MAIL_HOST;
         const isPredefinedService = PREDEFINED_SERVICES.includes(
           mailHost.toLowerCase(),
         );
@@ -48,17 +46,17 @@ const PREDEFINED_SERVICES = [
           ? {
               service: mailHost,
               auth: {
-                user: config.get('MAIL_USERNAME'),
-                pass: config.get('MAIL_PASSWORD'),
+                user: config.MAIL_USERNAME,
+                pass: config.MAIL_PASSWORD,
               },
             }
           : {
               host: mailHost,
-              port: config.get('MAIL_PORT', 587),
-              secure: config.get('MAIL_SECURE', false),
+              port: config.MAIL_PORT,
+              secure: config.MAIL_SECURE,
               auth: {
-                user: config.get('MAIL_USERNAME'),
-                pass: config.get('MAIL_PASSWORD'),
+                user: config.MAIL_USERNAME,
+                pass: config.MAIL_PASSWORD,
               },
             };
 

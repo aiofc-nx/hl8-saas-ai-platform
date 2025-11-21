@@ -12,5 +12,6 @@ export default {
     '^@/(.*)$': '<rootDir>/$1',
     '^@repo/constants/app$': '<rootDir>/../../../packages/constants/app.ts',
   },
-  transformIgnorePatterns: ['node_modules/(?!(@repo)/)'],
+  transformIgnorePatterns: ['node_modules/(?!(@repo|@hl8)/)'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };

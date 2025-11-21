@@ -18,7 +18,7 @@ export const safeFetch = async <T extends ZodSchema<unknown>>(
   schema: T,
   url: URL | RequestInfo,
   init?: RequestInit,
-): Promise<[string | null, z.TypeOf<T>]> => {
+): Promise<[string | null, z.TypeOf<T> | null]> => {
   try {
     const response: Response = await fetch(`${env.API_URL}${url}`, init);
 
@@ -112,7 +112,7 @@ export const safeFetch = async <T extends ZodSchema<unknown>>(
         url: `${env.API_URL}${url}`,
         status: response.status,
         responseData: res,
-        validationErrors: validateFields.error.errors,
+        validationErrors: validateFields.error.issues,
         formattedErrors: validateFields.error.format(),
       });
       return [`Validation error: ${validateFields.error.message}`, null];

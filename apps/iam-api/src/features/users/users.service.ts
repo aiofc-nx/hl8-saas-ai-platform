@@ -1,7 +1,8 @@
 import { User } from '@/features/users/entities/user.entity';
+import { GeneralNotFoundException } from '@hl8/exceptions';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 /**
  * 用户服务，用于管理用户数据。
@@ -48,7 +49,7 @@ export class UsersService {
       { populate: ['profile'] },
     );
     if (!user) {
-      throw new NotFoundException('User not found.');
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
     }
     return user;
   }

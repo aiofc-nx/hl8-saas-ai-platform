@@ -1,4 +1,3 @@
-import { AppModule } from '@/app.module';
 import { AuthService } from '@/features/auth/auth.service';
 import { MailService } from '@/features/mail/mail.service';
 import { User } from '@/features/users/entities/user.entity';
@@ -10,6 +9,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TestAppModule } from './test-module.helper';
 
 /**
  * 用户服务集成测试套件。
@@ -27,32 +27,58 @@ describe('Users Integration (e2e)', () => {
   let testUser: User;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(MailService)
-      .useValue({
-        sendEmail: jest.fn().mockResolvedValue(undefined),
+    try {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [TestAppModule],
       })
-      .compile();
+        .overrideProvider(MailService)
+        .useValue({
+          sendEmail: jest.fn().mockResolvedValue(undefined),
+        })
+        .compile();
 
-    app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+      app = moduleFixture.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+      );
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
 
-    usersService = moduleFixture.get<UsersService>(UsersService);
-    authService = moduleFixture.get<AuthService>(AuthService);
-    orm = moduleFixture.get<MikroORM>(MikroORM);
+      usersService = moduleFixture.get<UsersService>(UsersService);
+      authService = moduleFixture.get<AuthService>(AuthService);
+      orm = moduleFixture.get<MikroORM>(MikroORM);
 
-    // 创建测试用户
-    const testEmail = `test-user-${Date.now()}@example.com`;
-    const registerResult = await authService.register({
-      email: testEmail,
-      password: 'TestPassword123!',
-    });
-    testUser = registerResult.data;
+      // 验证服务是否正确注入
+      if (!usersService) {
+        throw new Error(
+          'UsersService 未正确注入。请检查模块配置和数据库连接。',
+        );
+      }
+      if (!authService) {
+        throw new Error('AuthService 未正确注入。请检查模块配置和数据库连接。');
+      }
+      if (!orm) {
+        throw new Error('MikroORM 未正确注入。请检查数据库连接配置。');
+      }
+
+      // 创建测试用户
+      const testEmail = `test-user-${Date.now()}@example.com`;
+      const registerResult = await authService.register({
+        email: testEmail,
+        password: 'TestPassword123!',
+      });
+      testUser = registerResult.data;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('password authentication failed')) {
+        throw new Error(
+          `数据库认证失败。请检查数据库密码是否正确。\n` +
+            `提示：设置 DB_PASSWORD 环境变量，例如：DB_PASSWORD=your_password pnpm test:integration\n` +
+            `原始错误：${errorMessage}`,
+        );
+      }
+      throw error;
+    }
   }, 60000); // 增加超时时间到 60 秒
 
   afterAll(async () => {
@@ -71,7 +97,7 @@ describe('Users Integration (e2e)', () => {
           }
           await em.removeAndFlush(user);
         }
-      } catch (error) {
+      } catch (_error) {
         // 忽略清理错误
       }
     }

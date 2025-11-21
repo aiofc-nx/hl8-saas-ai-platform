@@ -1,10 +1,11 @@
 import { SaveFileOptions } from '@/common/interfaces';
-import { Env, saveFileToS3 } from '@/common/utils';
+import { saveFileToS3 } from '@/common/utils';
 import { deleteFile, deleteFiles, saveFile } from '@/common/utils/file';
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { MemoryStorageFile } from '@blazity/nest-file-fastify';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Logger } from 'nestjs-pino';
+import { GeneralBadRequestException } from '@hl8/exceptions';
+import { Logger } from '@hl8/logger';
+import { Injectable } from '@nestjs/common';
 
 /**
  * Service for handling file operations such as upload and delete.
@@ -20,14 +21,14 @@ export class FileService {
   /**
    * Creates an instance of FileService.
    *
-   * @param {ConfigService<Env>} configService - Service for accessing environment variables.
+   * @param {EnvConfig} config - Environment configuration for accessing environment variables.
    * @param {Logger} loggerService - Logger instance for logging errors.
    */
   constructor(
-    private readonly configService: ConfigService<Env>,
+    private readonly config: EnvConfig,
     private readonly loggerService: Logger,
   ) {
-    this.isPublic = this.configService.get('FILE_SYSTEM') === 'public';
+    this.isPublic = this.config.FILE_SYSTEM === 'public';
   }
 
   /**
@@ -61,7 +62,13 @@ export class FileService {
       }
     } catch (e) {
       this.loggerService.error(e);
-      throw new BadRequestException(e);
+      const errorMessage = e instanceof Error ? e.message : '文件删除失败';
+      throw new GeneralBadRequestException(
+        [{ field: 'file', message: errorMessage }],
+        '文件删除失败，请稍后重试',
+        'FILE_DELETION_FAILED',
+        e,
+      );
     }
   }
 
@@ -80,7 +87,13 @@ export class FileService {
       }
     } catch (e) {
       this.loggerService.error(e);
-      throw new BadRequestException(e);
+      const errorMessage = e instanceof Error ? e.message : '批量文件删除失败';
+      throw new GeneralBadRequestException(
+        [{ field: 'files', message: errorMessage }],
+        '批量文件删除失败，请稍后重试',
+        'BATCH_FILE_DELETION_FAILED',
+        e,
+      );
     }
   }
 

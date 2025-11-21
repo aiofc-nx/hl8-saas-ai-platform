@@ -1,7 +1,7 @@
 import { concatStr } from '@/common/utils';
+import { Logger } from '@hl8/logger';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { Logger } from 'nestjs-pino';
 
 /**
  * Middleware for logging HTTP requests in a NestJS application.

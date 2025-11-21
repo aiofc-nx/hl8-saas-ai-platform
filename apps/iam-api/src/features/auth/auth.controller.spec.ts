@@ -1,7 +1,7 @@
 import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { User } from '@/features/users/entities/user.entity';
 import { getRepositoryToken } from '@mikro-orm/nestjs';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
@@ -73,10 +73,11 @@ describe('AuthController', () => {
           },
         },
         {
-          provide: ConfigService,
+          provide: EnvConfig,
           useValue: {
-            get: jest.fn(),
-          },
+            ACCESS_TOKEN_SECRET: 'test-secret',
+            REFRESH_TOKEN_SECRET: 'test-refresh-secret',
+          } as EnvConfig,
         },
         {
           provide: getRepositoryToken(Session),

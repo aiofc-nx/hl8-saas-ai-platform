@@ -1,13 +1,13 @@
-import { Env } from '@/common/utils';
 import { swagger } from '@/swagger';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import { configureErrorTypeResolver } from '@hl8/exceptions';
+import { Logger, LoggerErrorInterceptor } from '@hl8/logger';
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { Logger, LoggerErrorInterceptor } from 'nestjs-pino';
 import { join } from 'path';
+import { EnvConfig } from './common/utils/validateEnv';
 
 /**
  * 初始化 NestJS Fastify 应用程序，配置中间件、安全、验证、CORS、静态资源、日志和 API 文档。
@@ -30,8 +30,21 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
   // 日志实例，用于记录应用事件
   const logger = app.get(Logger);
 
-  // 配置服务，用于获取环境变量和其他设置
-  const configService = app.get(ConfigService<Env>);
+  // 环境配置，用于获取环境变量和其他设置
+  const config = app.get(EnvConfig);
+
+  // 配置异常文档链接（可选，根据实际需求配置）
+  if (config.NODE_ENV !== 'production') {
+    configureErrorTypeResolver({
+      baseUrl: `${config.HOST}:${config.PORT}/docs/errors`,
+      errorCodeMap: {
+        // 可以根据实际业务错误码配置映射
+        // 'USER_NOT_FOUND': '/user-not-found',
+        // 'INVALID_CREDENTIALS': '/auth/invalid-credentials',
+      },
+      defaultPath: '/general',
+    });
+  }
 
   // 使用 Helmet 设置安全头（Fastify 插件）
   await app.register(helmet, {
@@ -50,7 +63,7 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
   // 启用 CORS，配置允许的来源和方法
   app.enableCors({
     credentials: true,
-    origin: configService.get('ALLOW_CORS_URL').split(','),
+    origin: config.ALLOW_CORS_URL.split(','),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   });
 
@@ -70,7 +83,7 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
   );
 
   // Swagger 设置，在非生产环境启用 API 文档
-  if (configService.get('NODE_ENV') !== 'production') {
+  if (config.NODE_ENV !== 'production') {
     await swagger(app);
   }
 
@@ -81,9 +94,7 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
   await app.register(fastifyMultipart);
 
   // 启动应用并在配置的端口和主机上监听
-  await app.listen(configService.get('PORT')!, '0.0.0.0', () => {
-    logger.log(
-      `This application started at ${configService.get('HOST')}:${configService.get('PORT')}`,
-    );
+  await app.listen(config.PORT, '0.0.0.0', () => {
+    logger.log(`This application started at ${config.HOST}:${config.PORT}`);
   });
 };

@@ -76,12 +76,7 @@ describe('TransactionService', () => {
 
       // 模拟 transactional 方法在异常时回滚
       mockEm.transactional = jest.fn().mockImplementation(async (callback) => {
-        try {
-          return await callback(mockEm);
-        } catch (e) {
-          // MikroORM 会自动回滚，这里只是模拟
-          throw e;
-        }
+        return await callback(mockEm);
       });
 
       // 执行测试并验证异常

@@ -38,11 +38,11 @@ export class ReqLogInterceptor implements NestInterceptor {
    *
    * @param {ExecutionContext} context - 包含请求/响应信息的执行上下文。
    * @param {CallHandler} next - 用于处理请求的处理器。
-   * @returns {Observable<any>} 响应流的 Observable。
+   * @returns {Observable<unknown>} 响应流的 Observable。
    */
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
-    const res = context.switchToHttp().getResponse();
+    const _res = context.switchToHttp().getResponse();
 
     // 在处理请求前记录请求方法和 URL
     this.logger.log(concatStr([req.method, req.originalUrl]));

@@ -1,7 +1,5 @@
 'use client';
 
-import type React from 'react';
-
 import { deleteAccount } from '@/server/auth.server';
 import {
   AlertDialog,
@@ -26,7 +24,7 @@ import { Input } from '@repo/shadcn/input';
 import { Label } from '@repo/shadcn/label';
 import { useSession } from 'next-auth/react';
 import { useAction } from 'next-safe-action/hooks';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 /**
  * @description 通用账户设置组件
@@ -34,29 +32,22 @@ import { useEffect, useState } from 'react';
  */
 export default function GeneralSettings() {
   const session = useSession();
-  const [userData, setUserData] = useState({
-    name: '',
-    email: '',
-    username: '',
-  });
 
-  // 当 session 加载完成后更新用户数据
-  useEffect(() => {
+  // 从 session 派生用户数据，避免在 effect 中同步调用 setState
+  const userData = useMemo(() => {
     if (session.data?.user) {
-      setUserData({
+      return {
         name: session.data.user.profile?.name ?? '',
         email: session.data.user.email ?? '',
         username: session.data.user.username ?? '',
-      });
+      };
     }
+    return {
+      name: '',
+      email: '',
+      username: '',
+    };
   }, [session.data?.user]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setUserData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const [password, setPassword] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -78,13 +69,7 @@ export default function GeneralSettings() {
           <div className="">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input
-                disabled
-                id="name"
-                name="name"
-                value={userData.name}
-                onChange={handleChange}
-              />
+              <Input disabled id="name" name="name" value={userData.name} />
             </div>
           </div>
 
@@ -96,7 +81,6 @@ export default function GeneralSettings() {
               name="email"
               type="email"
               value={userData.email}
-              onChange={handleChange}
             />
           </div>
 
@@ -107,7 +91,6 @@ export default function GeneralSettings() {
               id="username"
               name="username"
               value={userData.username}
-              onChange={handleChange}
             />
           </div>
         </CardContent>

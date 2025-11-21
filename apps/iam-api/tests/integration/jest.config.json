@@ -4,11 +4,24 @@
   "testEnvironment": "node",
   "testRegex": ".integration-spec.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": {
+          "module": "CommonJS",
+          "moduleResolution": "node"
+        }
+      }
+    ]
   },
   "moduleNameMapper": {
-    "^@/(.*)$": "<rootDir>/../../src/$1"
+    "^@/(.*)$": "<rootDir>/../../src/$1",
+    "^@repo/constants/(.*)$": "<rootDir>/../../../../packages/constants/$1",
+    "^@hl8/config$": "<rootDir>/../../../../libs/common/config/dist/index.js",
+    "^@hl8/config/(.*)$": "<rootDir>/../../../../libs/common/config/dist/$1"
   },
-  "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
+  "transformIgnorePatterns": ["node_modules/(?!(@repo|@hl8)/)"],
+  "setupFiles": ["<rootDir>/setup.ts"],
+  "setupFilesAfterEnv": [],
   "testTimeout": 60000
 }

@@ -320,7 +320,7 @@ export const changePassword = safeAction
       },
     );
 
-    if (error) throw new Error(error);
+    if (error || !resultData) throw new Error(error || 'No data returned');
     return resultData;
   });
 
@@ -350,7 +350,7 @@ export const resendConfirmationEmail = safeAction.action(async () => {
     },
   );
 
-  if (error) throw new Error(error);
+  if (error || !data) throw new Error(error || 'No data returned');
   return data;
 });
 
@@ -489,7 +489,7 @@ export const getAuthSessions = async (): Promise<Session[]> => {
     },
   );
 
-  if (error) return [];
+  if (error || !data) return [];
   return data.data;
 };
 
@@ -578,6 +578,10 @@ export const refreshAccessToken = async (user: User): Promise<unknown> => {
     console.log('Refresh access token error', error);
     return;
   }
+  if (!data) {
+    console.log('Refresh access token: data is null');
+    return;
+  }
   await updateTokens(data);
 };
 
@@ -591,11 +595,12 @@ export const refreshAccessToken = async (user: User): Promise<unknown> => {
  */
 export const validateSessionIfExist = async (): Promise<GetSession> => {
   const [error, data] = await getSessionById();
-  if (error) {
-    console.log('Validate session error', error);
+  if (error || !data) {
+    console.log('Validate session error', error || 'No data returned');
     await signOut({
       redirect: false,
     });
+    throw new Error(error || 'Session validation failed: no data returned');
   }
   console.log('Validate session success');
   return data;

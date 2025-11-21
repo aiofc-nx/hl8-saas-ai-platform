@@ -5,13 +5,13 @@ import {
   RegisterUserInterface,
 } from '@/common/interfaces';
 import {
-  Env,
   extractName,
   generateOTP,
   generateRefreshTime,
   hashString,
   validateString,
 } from '@/common/utils';
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { TransactionService } from '@/database';
 import {
   ChangePasswordDto,
@@ -38,17 +38,16 @@ import {
 } from '@/features/mail/templates';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
+import {
+  GeneralBadRequestException,
+  GeneralNotFoundException,
+  GeneralUnauthorizedException,
+} from '@hl8/exceptions';
+import { Logger } from '@hl8/logger';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Logger } from 'nestjs-pino';
 
 /**
  * 认证服务，用于处理认证、注册、会话和用户安全逻辑。
@@ -69,7 +68,7 @@ export class AuthService {
    * 创建 AuthService 实例。
    *
    * @param {JwtService} jwtService - JWT 服务，用于令牌操作。
-   * @param {ConfigService<Env>} config - 配置服务，用于访问环境变量。
+   * @param {EnvConfig} config - 环境配置，用于访问环境变量。
    * @param {EntityRepository<User>} userRepository - 用户实体的仓库。
    * @param {EntityRepository<Profile>} profileRepository - 个人资料实体的仓库。
    * @param {EntityRepository<Session>} sessionRepository - 会话实体的仓库。
@@ -80,7 +79,7 @@ export class AuthService {
    */
   constructor(
     private readonly jwtService: JwtService,
-    private readonly config: ConfigService<Env>,
+    private readonly config: EnvConfig,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
     @InjectRepository(Profile)
@@ -112,8 +111,9 @@ export class AuthService {
           id: user.id,
         },
         {
-          secret: this.config.get('ACCESS_TOKEN_SECRET'),
-          expiresIn: this.config.get('ACCESS_TOKEN_EXPIRATION'),
+          secret: this.config.ACCESS_TOKEN_SECRET,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          expiresIn: this.config.ACCESS_TOKEN_EXPIRATION as any,
         },
       ),
       this.jwtService.signAsync(
@@ -123,8 +123,9 @@ export class AuthService {
           id: user.id,
         },
         {
-          secret: this.config.get('REFRESH_TOKEN_SECRET'),
-          expiresIn: this.config.get('REFRESH_TOKEN_EXPIRATION'),
+          secret: this.config.REFRESH_TOKEN_SECRET,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          expiresIn: this.config.REFRESH_TOKEN_EXPIRATION as any,
         },
       ),
     ]);
@@ -163,7 +164,10 @@ export class AuthService {
       this.logger.warn('User not found for login attempt', {
         identifier: dto.identifier,
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new GeneralUnauthorizedException(
+        '用户名或密码错误',
+        'INVALID_CREDENTIALS',
+      );
     }
 
     // 检查密码字段是否被加载
@@ -174,7 +178,10 @@ export class AuthService {
         hasPasswordProperty: 'password' in user,
         userKeys: Object.keys(user),
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new GeneralUnauthorizedException(
+        '用户名或密码错误',
+        'INVALID_CREDENTIALS',
+      );
     }
 
     // 添加详细的日志（使用 log 级别确保输出）
@@ -197,7 +204,10 @@ export class AuthService {
         passwordHashLength: user.password.length,
         inputPasswordLength: dto.password.length,
       });
-      throw new UnauthorizedException('Invalid credentials');
+      throw new GeneralUnauthorizedException(
+        '用户名或密码错误',
+        'INVALID_CREDENTIALS',
+      );
     }
 
     this.logger.log('Password validation succeeded', {
@@ -233,7 +243,11 @@ export class AuthService {
         ],
       });
       if (existingUser) {
-        throw new BadRequestException('Username or email already exists');
+        throw new GeneralBadRequestException(
+          [{ field: 'email', message: '用户名或邮箱已存在' }],
+          '注册失败，用户名或邮箱已被使用',
+          'USER_ALREADY_EXISTS',
+        );
       }
 
       const result = await this.transactionService.runInTransaction(
@@ -277,7 +291,11 @@ export class AuthService {
       );
 
       if (!user) {
-        throw new BadRequestException('Failed to retrieve created user');
+        throw new GeneralBadRequestException(
+          [{ field: 'system', message: '用户创建失败' }],
+          '注册失败，请稍后重试',
+          'USER_CREATION_FAILED',
+        );
       }
 
       // 确保用户实体完全加载并刷新
@@ -318,15 +336,19 @@ export class AuthService {
         error: e instanceof Error ? e.message : String(e),
         stack: e instanceof Error ? e.stack : undefined,
       });
-      if (e instanceof BadRequestException) {
+      if (e instanceof GeneralBadRequestException) {
         throw e;
       }
       // 提供更详细的错误信息
       const errorMessage =
         e instanceof Error
-          ? e.message || 'Something went wrong!'
-          : 'Something went wrong!';
-      throw new BadRequestException(errorMessage);
+          ? e.message || '注册过程中发生错误'
+          : '注册过程中发生错误';
+      throw new GeneralBadRequestException(
+        [{ field: 'system', message: errorMessage }],
+        errorMessage,
+        'REGISTRATION_FAILED',
+      );
     }
   }
 
@@ -392,16 +414,29 @@ export class AuthService {
       { email: dto.email },
       { populate: ['profile'] },
     );
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
     const otp = await this.otpRepository.findOne({
       otp: dto.token,
       type: TokenTypes.EMAIL_CONFIRMATION,
     });
-    if (!otp) throw new NotFoundException('Invalid confirmation code');
+    if (!otp)
+      throw new GeneralNotFoundException(
+        '验证码不存在或已失效',
+        'INVALID_CONFIRMATION_CODE',
+      );
     if (otp.otp !== dto.token)
-      throw new BadRequestException('Invalid confirmation code');
+      throw new GeneralBadRequestException(
+        [{ field: 'token', message: '验证码不正确' }],
+        '验证码不正确，请检查后重试',
+        'INVALID_CONFIRMATION_CODE',
+      );
     if (otp.expires && new Date(otp.expires) < new Date())
-      throw new BadRequestException('Email confirm token expired');
+      throw new GeneralBadRequestException(
+        [{ field: 'token', message: '验证码已过期' }],
+        '验证码已过期，请重新获取',
+        'CONFIRMATION_CODE_EXPIRED',
+      );
     user.isEmailVerified = true;
     user.emailVerifiedAt = new Date();
     const em = this.userRepository.getEntityManager();
@@ -432,9 +467,14 @@ export class AuthService {
       { email },
       { populate: ['profile'] },
     );
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
     if (user.isEmailVerified) {
-      throw new BadRequestException('Email already verified');
+      throw new GeneralBadRequestException(
+        [{ field: 'email', message: '邮箱已验证' }],
+        '邮箱已验证，无需重复验证',
+        'EMAIL_ALREADY_VERIFIED',
+      );
     }
 
     // 生成新的 OTP
@@ -484,7 +524,8 @@ export class AuthService {
       },
       { populate: ['profile'] },
     );
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
     const passwordResetToken = await generateOTP();
     const otp = new Otp();
     otp.otp = passwordResetToken;
@@ -520,16 +561,29 @@ export class AuthService {
       },
       { populate: ['profile'] },
     );
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
     const otp = await this.otpRepository.findOne({
       otp: dto.resetToken,
       type: TokenTypes.PASSWORD_RESET,
     });
-    if (!otp) throw new NotFoundException('Invalid password reset token');
+    if (!otp)
+      throw new GeneralNotFoundException(
+        '重置令牌不存在或已失效',
+        'INVALID_RESET_TOKEN',
+      );
     if (otp.otp !== dto.resetToken)
-      throw new BadRequestException('Invalid password reset token');
+      throw new GeneralBadRequestException(
+        [{ field: 'resetToken', message: '重置令牌不正确' }],
+        '重置令牌不正确，请检查后重试',
+        'INVALID_RESET_TOKEN',
+      );
     if (otp.expires && new Date() > otp.expires)
-      throw new BadRequestException('Password reset token expired');
+      throw new GeneralBadRequestException(
+        [{ field: 'resetToken', message: '重置令牌已过期' }],
+        '重置令牌已过期，请重新获取',
+        'RESET_TOKEN_EXPIRED',
+      );
     user.password = await hashString(dto.newPassword);
     const em = this.userRepository.getEntityManager();
     await em.flush();
@@ -580,7 +634,8 @@ export class AuthService {
     const session = await this.sessionRepository.findOne({
       id: dto.session_token,
     });
-    if (!session) throw new NotFoundException('Session not found');
+    if (!session)
+      throw new GeneralNotFoundException('会话不存在', 'SESSION_NOT_FOUND');
     const em = this.sessionRepository.getEntityManager();
     em.remove(session);
     await em.flush();
@@ -610,13 +665,15 @@ export class AuthService {
    */
   async refreshToken(dto: RefreshTokenDto): Promise<RefreshTokenInterface> {
     const user = await this.userRepository.findOne({ id: dto.user_id });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user)
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
     const { access_token, refresh_token } = await this.generateTokens(user);
     const session = await this.sessionRepository.findOne({
       id: dto.session_token,
       user: dto.user_id,
     });
-    if (!session) throw new NotFoundException('Session not found');
+    if (!session)
+      throw new GeneralNotFoundException('会话不存在', 'SESSION_NOT_FOUND');
     session.refresh_token = refresh_token;
     const access_token_refresh_time = await generateRefreshTime();
     const em = this.sessionRepository.getEntityManager();
@@ -654,7 +711,8 @@ export class AuthService {
    */
   async getSession(id: string): Promise<Session> {
     const session = await this.sessionRepository.findOne({ id });
-    if (!session) throw new NotFoundException('Session not found!');
+    if (!session)
+      throw new GeneralNotFoundException('会话不存在', 'SESSION_NOT_FOUND');
     return session;
   }
 
@@ -670,16 +728,29 @@ export class AuthService {
    */
   async deleteAccount(dto: DeleteUserDto): Promise<void> {
     const user = await this.userRepository.findOne({ id: dto.user_id });
-    if (!user) throw new NotFoundException('User not found');
-    if (!user.password) throw new BadRequestException('Invalid credentials');
+    if (!user)
+      throw new GeneralNotFoundException('用户不存在', 'USER_NOT_FOUND');
+    if (!user.password)
+      throw new GeneralUnauthorizedException(
+        '密码验证失败',
+        'INVALID_CREDENTIALS',
+      );
     const isValidPassword = await validateString(dto.password, user.password);
-    if (!isValidPassword) throw new BadRequestException('Invalid credentials');
+    if (!isValidPassword)
+      throw new GeneralUnauthorizedException(
+        '密码验证失败',
+        'INVALID_CREDENTIALS',
+      );
     try {
       const em = this.userRepository.getEntityManager();
       em.remove(user);
       await em.flush();
-    } catch (e) {
-      throw new BadRequestException('Failed to delete user account');
+    } catch (_e) {
+      throw new GeneralBadRequestException(
+        [{ field: 'system', message: '删除用户账户失败' }],
+        '删除用户账户失败，请稍后重试',
+        'ACCOUNT_DELETION_FAILED',
+      );
     }
   }
 }

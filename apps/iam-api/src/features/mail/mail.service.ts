@@ -1,6 +1,6 @@
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { APP_NAME } from '@repo/constants/app';
 
 /**
@@ -17,11 +17,11 @@ export class MailService {
    * 创建 MailService 实例。
    *
    * @param {MailerService} mailerService - 邮件发送服务实例。
-   * @param {ConfigService} config - 配置服务，用于访问环境变量。
+   * @param {EnvConfig} config - 环境配置，用于访问环境变量。
    */
   constructor(
     private readonly mailerService: MailerService,
-    private readonly config: ConfigService,
+    private readonly config: EnvConfig,
   ) {}
 
   /**
@@ -46,7 +46,7 @@ export class MailService {
   async sendEmail(mailOptions: ISendMailOptions): Promise<void> {
     try {
       await this.mailerService.sendMail({
-        from: `${APP_NAME}<${this.config.get('MAIL_USERNAME')}>`,
+        from: `${APP_NAME}<${this.config.MAIL_USERNAME}>`,
         ...mailOptions,
       });
       this.logger.debug('邮件发送成功', {

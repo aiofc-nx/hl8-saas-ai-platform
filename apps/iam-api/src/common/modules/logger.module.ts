@@ -1,6 +1,6 @@
+import { LoggerModule as PinoLoggerModule } from '@hl8/logger';
 import { Module } from '@nestjs/common';
 import { APP_NAME } from '@repo/constants/app';
-import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 
 /**
  * Logger module for application-wide request and response logging using Pino.
@@ -12,7 +12,6 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
   imports: [
     PinoLoggerModule.forRootAsync({
       useFactory: () => ({
-        forRoutes: ['*'],
         pinoHttp: {
           name: APP_NAME,
           autoLogging: true,

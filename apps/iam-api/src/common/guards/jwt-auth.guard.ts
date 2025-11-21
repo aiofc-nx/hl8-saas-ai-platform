@@ -1,12 +1,7 @@
 import { IS_PUBLIC_KEY } from '@/common/decorators';
-import { Env } from '@/common/utils';
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from '@/common/utils/validateEnv';
+import { GeneralUnauthorizedException } from '@hl8/exceptions';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -33,12 +28,12 @@ export class JwtAuthGuard implements CanActivate {
    *
    * @param jwtService - JWT 服务，用于 JWT 令牌操作（验证、解码）。
    * @param reflector - NestJS 工具，用于从装饰器读取元数据。
-   * @param configService - 配置服务，用于访问环境变量。
+   * @param config - 环境配置，用于访问环境变量。
    */
   constructor(
     private jwtService: JwtService,
     private reflector: Reflector,
-    private configService: ConfigService<Env>,
+    private config: EnvConfig,
   ) {}
 
   /**
@@ -65,14 +60,20 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException();
+      throw new GeneralUnauthorizedException(
+        '缺少访问令牌，请先登录',
+        'MISSING_ACCESS_TOKEN',
+      );
     }
     try {
       request.user = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('ACCESS_TOKEN_SECRET'),
+        secret: this.config.ACCESS_TOKEN_SECRET,
       });
     } catch {
-      throw new UnauthorizedException('Invalid Access Token');
+      throw new GeneralUnauthorizedException(
+        '访问令牌无效或已过期',
+        'INVALID_ACCESS_TOKEN',
+      );
     }
     return true;
   }

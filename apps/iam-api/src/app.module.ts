@@ -4,17 +4,23 @@ import {
   NodeMailerModule,
   ThrottleModule,
 } from '@/common/modules';
-import { Env, validateEnv } from '@/common/utils';
 import { DatabaseModule } from '@/database';
 import { AuthModule } from '@/features/auth/auth.module';
 import { FileModule } from '@/features/file/file.module';
 import { UsersModule } from '@/features/users/users.module';
+import { TypedConfigModule, dotenvLoader } from '@hl8/config';
+import {
+  AnyExceptionFilter,
+  ForbiddenExceptionFilter,
+  HttpExceptionFilter,
+  NotFoundExceptionFilter,
+} from '@hl8/exceptions';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { Module, OnModuleInit } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { EnvConfig } from './common/utils/validateEnv';
 import { HealthModule } from './features/health/health.module';
 import { MailModule } from './features/mail/mail.module';
 
@@ -43,14 +49,31 @@ import { MailModule } from './features/mail/mail.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    {
+      provide: APP_FILTER,
+      useClass: AnyExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: ForbiddenExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: NotFoundExceptionFilter,
+    },
   ],
   imports: [
     JwtModule.register({
       global: true,
     }),
-    ConfigModule.forRoot({
+    TypedConfigModule.forRoot({
+      schema: EnvConfig,
+      load: dotenvLoader(),
       isGlobal: true,
-      validate: validateEnv,
     }),
     DatabaseModule,
     NodeMailerModule,
@@ -68,11 +91,11 @@ export class AppModule implements OnModuleInit {
    * 创建 AppModule 实例。
    *
    * @param orm - MikroORM 实例，用于数据库迁移。
-   * @param config - 配置服务，用于访问环境变量。
+   * @param config - 环境配置，用于访问环境变量。
    */
   constructor(
     private readonly orm: MikroORM,
-    private readonly config: ConfigService<Env>,
+    private readonly config: EnvConfig,
   ) {}
 
   /**
@@ -84,7 +107,7 @@ export class AppModule implements OnModuleInit {
    * @returns {Promise<void>}
    */
   async onModuleInit(): Promise<void> {
-    const nodeEnv = this.config.get('NODE_ENV');
+    const nodeEnv = this.config.NODE_ENV;
     // 仅在非生产环境自动运行迁移
     if (nodeEnv !== 'production') {
       await this.orm.getMigrator().up();

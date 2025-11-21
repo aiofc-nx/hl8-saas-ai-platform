@@ -1,6 +1,6 @@
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MailService } from './mail.service';
 
@@ -20,7 +20,7 @@ jest.mock('@repo/constants/app', () => ({
 describe('MailService', () => {
   let service: MailService;
   let mailerService: jest.Mocked<MailerService>;
-  let configService: jest.Mocked<ConfigService>;
+  let config: EnvConfig;
   let loggerSpy: jest.SpyInstance;
 
   beforeEach(async () => {
@@ -29,10 +29,10 @@ describe('MailService', () => {
       sendMail: jest.fn(),
     } as unknown as jest.Mocked<MailerService>;
 
-    // 创建模拟的 ConfigService
-    configService = {
-      get: jest.fn().mockReturnValue('test@example.com'),
-    } as unknown as jest.Mocked<ConfigService>;
+    // 创建模拟的 EnvConfig
+    config = {
+      MAIL_USERNAME: 'test@example.com',
+    } as EnvConfig;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,8 +42,8 @@ describe('MailService', () => {
           useValue: mailerService,
         },
         {
-          provide: ConfigService,
-          useValue: configService,
+          provide: EnvConfig,
+          useValue: config,
         },
       ],
     }).compile();
@@ -74,7 +74,7 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      configService.get = jest.fn().mockReturnValue('sender@example.com');
+      config.MAIL_USERNAME = 'sender@example.com';
 
       // 执行测试
       await service.sendEmail(mailOptions);
@@ -85,7 +85,6 @@ describe('MailService', () => {
         from: expect.stringContaining('sender@example.com'),
         ...mailOptions,
       });
-      expect(configService.get).toHaveBeenCalledWith('MAIL_USERNAME');
     });
 
     it('应该正确设置发件人地址', async () => {
@@ -97,7 +96,7 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      configService.get = jest.fn().mockReturnValue('custom@example.com');
+      config.MAIL_USERNAME = 'custom@example.com';
 
       // 执行测试
       await service.sendEmail(mailOptions);
@@ -125,7 +124,7 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      configService.get = jest.fn().mockReturnValue('sender@example.com');
+      config.MAIL_USERNAME = 'sender@example.com';
 
       // 执行测试
       await service.sendEmail(mailOptions);
@@ -150,7 +149,7 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      configService.get = jest.fn().mockReturnValue('sender@example.com');
+      config.MAIL_USERNAME = 'sender@example.com';
 
       // 执行测试
       await service.sendEmail(mailOptions);
@@ -175,7 +174,7 @@ describe('MailService', () => {
 
       const error = new Error('SMTP connection failed');
       mailerService.sendMail = jest.fn().mockRejectedValue(error);
-      configService.get = jest.fn().mockReturnValue('sender@example.com');
+      config.MAIL_USERNAME = 'sender@example.com';
 
       // 执行测试并验证抛出异常
       await expect(service.sendEmail(mailOptions)).rejects.toThrow(
@@ -204,7 +203,7 @@ describe('MailService', () => {
 
       const error = 'String error';
       mailerService.sendMail = jest.fn().mockRejectedValue(error);
-      configService.get = jest.fn().mockReturnValue('sender@example.com');
+      config.MAIL_USERNAME = 'sender@example.com';
 
       // 执行测试并验证抛出异常
       await expect(service.sendEmail(mailOptions)).rejects.toBe(error);

@@ -79,6 +79,7 @@ export async function deleteFileFromS3(relativePath: string): Promise<void> {
       }),
     );
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((error as any).$metadata?.httpStatusCode !== 404) throw error;
   }
 }

@@ -1,14 +1,9 @@
-import { Env } from '@/common/utils';
+import { EnvConfig } from '@/common/utils/validateEnv';
 import { Session } from '@/features/auth/entities/session.entity';
+import { GeneralUnauthorizedException } from '@hl8/exceptions';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
@@ -35,12 +30,12 @@ export class JwtRefreshGuard implements CanActivate {
    * 创建 JwtRefreshGuard 实例。
    *
    * @param jwtService - JWT 服务，用于 JWT 令牌操作（验证、解码）。
-   * @param configService - 配置服务，用于访问环境变量。
+   * @param config - 环境配置，用于访问环境变量。
    * @param sessionRepository - MikroORM 会话实体仓库，用于查询会话记录。
    */
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService<Env>,
+    private config: EnvConfig,
     @InjectRepository(Session)
     private readonly sessionRepository: EntityRepository<Session>,
   ) {}
@@ -62,20 +57,30 @@ export class JwtRefreshGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException('Invalid Refresh Token');
+      throw new GeneralUnauthorizedException(
+        '缺少刷新令牌，请先登录',
+        'MISSING_REFRESH_TOKEN',
+      );
     }
     try {
       request.user = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('REFRESH_TOKEN_SECRET'),
+        secret: this.config.REFRESH_TOKEN_SECRET,
       });
-    } catch (error) {
-      throw new UnauthorizedException('Invalid Refresh Token');
+    } catch (_error) {
+      throw new GeneralUnauthorizedException(
+        '刷新令牌无效或已过期',
+        'INVALID_REFRESH_TOKEN',
+      );
     }
     const session = await this.sessionRepository.findOne({
       refresh_token: token,
       user: request.user.id,
     });
-    if (!session) throw new UnauthorizedException('Invalid Refresh Token');
+    if (!session)
+      throw new GeneralUnauthorizedException(
+        '刷新令牌对应的会话不存在',
+        'SESSION_NOT_FOUND',
+      );
     return true;
   }
 

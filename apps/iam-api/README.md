@@ -132,3 +132,159 @@ pnpm test:email your-email@example.com
 - 生产环境测试步骤
 - 故障排查指南
 - 安全建议和最佳实践
+
+## 测试
+
+### 测试类型
+
+项目包含三种类型的测试：
+
+- **单元测试** (`test:unit`): 测试单个函数和类的功能
+- **集成测试** (`test:integration`): 测试模块之间的集成，包括数据库操作
+- **端到端测试** (`test:e2e`): 测试完整的 API 端点
+
+### 运行测试
+
+```bash
+# 运行所有测试
+pnpm test:all
+
+# 运行单元测试
+pnpm test:unit
+
+# 运行集成测试
+pnpm test:integration
+
+# 运行端到端测试
+pnpm test:e2e
+
+# 运行测试并生成覆盖率报告
+pnpm test:cov
+
+# 监视模式运行测试
+pnpm test:watch
+```
+
+### 集成测试配置
+
+集成测试需要连接到 PostgreSQL 数据库。测试使用以下默认配置（匹配 `docker-compose.yml` 中的配置）：
+
+- **数据库主机**: `localhost` (可通过 `DB_HOST` 环境变量覆盖)
+- **数据库端口**: `5432` (可通过 `DB_PORT` 环境变量覆盖)
+- **数据库用户名**: `aiofix` (可通过 `DB_USERNAME` 环境变量覆盖)
+- **数据库密码**: `aiofix` (可通过 `DB_PASSWORD` 环境变量覆盖)
+- **数据库名称**: `test_db` (可通过 `DB_NAME` 环境变量覆盖)
+
+#### 使用 Docker 容器运行测试
+
+如果使用项目中的 `docker-compose.yml` 启动数据库：
+
+1. **启动数据库容器**：
+
+   ```bash
+   docker-compose up -d postgres
+   ```
+
+2. **创建测试数据库**（在 Docker 容器中）：
+
+   ```bash
+   # 方式1：使用 docker exec
+   docker exec -it postgres_container psql -U aiofix -d hl8-platform -c "CREATE DATABASE test_db;"
+
+   # 方式2：使用本地 psql 客户端（如果已安装）
+   PGPASSWORD=aiofix createdb -h localhost -U aiofix -p 5432 test_db
+   ```
+
+3. **运行集成测试**：
+
+   ```bash
+   # 使用默认配置（匹配 Docker 容器）
+   pnpm test:integration
+
+   # 或者显式指定配置
+   DB_USERNAME=aiofix DB_PASSWORD=aiofix DB_NAME=test_db pnpm test:integration
+   ```
+
+#### 使用本地 PostgreSQL 运行测试
+
+如果使用本地安装的 PostgreSQL：
+
+1. **确保 PostgreSQL 服务正在运行**
+2. **创建测试数据库**（如果不存在）：
+   ```bash
+   createdb -U postgres test_db
+   ```
+3. **设置正确的数据库密码环境变量**（如果您的数据库密码不是默认值）：
+
+   ```bash
+   # 方式1：在命令前设置环境变量
+   DB_USERNAME=postgres DB_PASSWORD=your_password pnpm test:integration
+
+   # 方式2：导出环境变量
+   export DB_USERNAME=postgres
+   export DB_PASSWORD=your_password
+   pnpm test:integration
+   ```
+
+#### 测试数据库要求
+
+- 测试数据库应该是一个独立的数据库，不要与开发或生产数据库混用
+- 测试会自动创建和清理测试数据，但不会删除数据库本身
+- 确保测试数据库用户有足够的权限创建表和执行迁移
+
+#### 常见问题
+
+**问题：数据库认证失败**
+
+```
+错误：password authentication failed for user "aiofix"
+```
+
+**解决方案**：
+
+1. 确认 PostgreSQL 服务正在运行（Docker 容器或本地服务）
+2. 确认数据库用户名和密码正确
+   - Docker 容器默认：`aiofix/aiofix`
+   - 本地 PostgreSQL 默认：`postgres/postgres`
+3. 设置正确的环境变量：
+
+   ```bash
+   # Docker 容器
+   DB_USERNAME=aiofix DB_PASSWORD=aiofix pnpm test:integration
+
+   # 本地 PostgreSQL
+   DB_USERNAME=postgres DB_PASSWORD=your_actual_password pnpm test:integration
+   ```
+
+**问题：数据库不存在**
+
+```
+错误：database "test_db" does not exist
+```
+
+**解决方案**：
+
+对于 Docker 容器：
+
+```bash
+docker exec -it postgres_container psql -U aiofix -d hl8-platform -c "CREATE DATABASE test_db;"
+# 或
+PGPASSWORD=aiofix createdb -h localhost -U aiofix -p 5432 test_db
+```
+
+对于本地 PostgreSQL：
+
+```bash
+createdb -U postgres test_db
+# 或使用其他用户
+createdb -U your_username test_db
+```
+
+**问题：权限不足**
+
+```
+错误：permission denied to create database
+```
+
+**解决方案**：
+确保数据库用户有创建数据库和表的权限，或者使用具有足够权限的用户（如 `postgres` 超级用户）。

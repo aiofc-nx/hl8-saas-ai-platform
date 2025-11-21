@@ -1,9 +1,9 @@
-import { AppModule } from '@/app.module';
 import { TransactionService } from '@/database';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TestAppModule } from './test-module.helper';
 
 /**
  * 数据库事务集成测试套件。
@@ -18,13 +18,36 @@ describe('Database Transaction Integration (e2e)', () => {
   let orm: MikroORM;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    try {
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
 
-    transactionService =
-      moduleFixture.get<TransactionService>(TransactionService);
-    orm = moduleFixture.get<MikroORM>(MikroORM);
+      transactionService =
+        moduleFixture.get<TransactionService>(TransactionService);
+      orm = moduleFixture.get<MikroORM>(MikroORM);
+
+      // 验证服务是否正确注入
+      if (!transactionService) {
+        throw new Error(
+          'TransactionService 未正确注入。请检查模块配置和数据库连接。',
+        );
+      }
+      if (!orm) {
+        throw new Error('MikroORM 未正确注入。请检查数据库连接配置。');
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('password authentication failed')) {
+        throw new Error(
+          `数据库认证失败。请检查数据库密码是否正确。\n` +
+            `提示：设置 DB_PASSWORD 环境变量，例如：DB_PASSWORD=your_password pnpm test:integration\n` +
+            `原始错误：${errorMessage}`,
+        );
+      }
+      throw error;
+    }
   });
 
   afterAll(async () => {
@@ -46,7 +69,7 @@ describe('Database Transaction Integration (e2e)', () => {
           }
           await em.removeAndFlush(user);
         }
-      } catch (error) {
+      } catch (_error) {
         // 忽略清理错误
       }
       await orm.close();

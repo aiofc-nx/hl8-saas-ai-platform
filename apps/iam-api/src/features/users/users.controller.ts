@@ -35,9 +35,9 @@ export class UsersController {
    */
   @Public()
   @Get()
-  async findAll(): Promise<{ message: string; data: any[] }> {
+  async findAll(): Promise<{ message: string; data: unknown[] }> {
     const users = await this.usersService.findAll();
-    const data = users.map(({ password, ...user }) => ({
+    const data = users.map(({ password: _password, ...user }) => ({
       ...user,
     }));
     return { message: 'Users fetched successfully', data };
@@ -49,16 +49,16 @@ export class UsersController {
    * @description 根据用户名或 ID 查找并返回单个用户信息，返回的数据不包含密码字段。
    *
    * @param {string} identifier - 用户的标识符（例如：ID 或用户名）。
-   * @returns {Promise<{ message: string; data: any }>} 包含消息和用户数据的对象（不包含密码）。
+   * @returns {Promise<{ message: string; data: unknown }>} 包含消息和用户数据的对象（不包含密码）。
    * @throws {NotFoundException} 如果用户不存在。
    */
   @Public()
   @Get(':identifier')
   async findOne(
     @Param('identifier') identifier: string,
-  ): Promise<{ message: string; data: any }> {
+  ): Promise<{ message: string; data: unknown }> {
     const user = await this.usersService.findOne(identifier);
-    const { password, ...data } = user;
+    const { password: _password, ...data } = user;
     return { message: 'User fetched successfully', data };
   }
 

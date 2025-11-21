@@ -1,10 +1,9 @@
+import { LoggerModule } from '@hl8/logger';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { LoggerModule } from 'nestjs-pino';
 import { FileService } from './file.service';
 
 @Module({
-  imports: [LoggerModule, ConfigModule],
+  imports: [LoggerModule],
   exports: [FileService],
   providers: [FileService],
 })
