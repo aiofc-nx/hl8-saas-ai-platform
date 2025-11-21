@@ -51,9 +51,8 @@ describe('HttpExceptionFilter', () => {
     filter.catch(exception, host);
 
     expect(logger.error).toHaveBeenCalledWith(
-      '捕获到内部异常',
-      undefined,
       expect.objectContaining({
+        message: '捕获到内部异常',
         exceptionName: exception.name,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
         requestId: 'req-500',
@@ -95,8 +94,8 @@ describe('HttpExceptionFilter', () => {
     filter.catch(exception, host);
 
     expect(logger.warn).toHaveBeenCalledWith(
-      '捕获到业务异常',
       expect.objectContaining({
+        message: '捕获到业务异常',
         status: HttpStatus.FORBIDDEN,
         requestId: 'req-403',
         errorCode: 'NO_AUTH',
@@ -112,5 +111,62 @@ describe('HttpExceptionFilter', () => {
       }),
       HttpStatus.FORBIDDEN,
     );
+  });
+
+  it('应应用预设响应头', () => {
+    class CustomHeaderException extends GeneralForbiddenException {
+      override getPresetHeadersValues(): Record<string, string> {
+        return {
+          'Retry-After': '60',
+          'X-Custom': 'value',
+        };
+      }
+    }
+
+    const reply = jest.fn();
+    const httpAdapterHost = createHttpAdapterHost(reply);
+    const filter = new HttpExceptionFilter(httpAdapterHost);
+
+    const exception = new CustomHeaderException();
+    const response = { header: jest.fn() };
+    const host = createArgumentsHost({ requestId: 'req-headers' }, response);
+
+    filter.catch(exception, host);
+
+    expect(response.header).toHaveBeenCalledWith('Retry-After', '60');
+    expect(response.header).toHaveBeenCalledWith('X-Custom', 'value');
+  });
+
+  it('应处理无 header 方法的响应对象', () => {
+    const reply = jest.fn();
+    const httpAdapterHost = createHttpAdapterHost(reply);
+    const filter = new HttpExceptionFilter(httpAdapterHost);
+
+    class CustomHeaderException extends GeneralForbiddenException {
+      override getPresetHeadersValues(): Record<string, string> {
+        return { 'X-Test': 'value' };
+      }
+    }
+
+    const exception = new CustomHeaderException();
+    const response = {}; // 无 header 方法
+    const host = createArgumentsHost({ requestId: 'req-no-header' }, response);
+
+    expect(() => filter.catch(exception, host)).not.toThrow();
+    expect(reply).toHaveBeenCalled();
+  });
+
+  it('应支持无 Logger 的情况', () => {
+    const reply = jest.fn();
+    const httpAdapterHost = createHttpAdapterHost(reply);
+    const filter = new HttpExceptionFilter(httpAdapterHost);
+
+    const exception = new GeneralForbiddenException('测试');
+    const response = { header: jest.fn() };
+    const host = createArgumentsHost({ requestId: 'req-no-logger' }, response);
+
+    filter.catch(exception, host);
+
+    expect(reply).toHaveBeenCalled();
   });
 });

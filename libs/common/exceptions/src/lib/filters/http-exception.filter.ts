@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { AbstractHttpException } from '../exceptions/abstract-http.exception.js';
+import { resolveErrorType } from '../utils/error-type-resolver.js';
 import { resolveRequestId } from '../utils/request-id.util.js';
 
 type LoggerServiceInstance = InstanceType<typeof Logger>;
@@ -40,12 +41,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const httpContext = host.switchToHttp();
 
     const requestId = resolveRequestId(httpContext);
-    const response = exception.toErrorResponse(requestId);
+    const errorType = resolveErrorType(exception.errorCode);
+    const response = exception.toErrorResponse(requestId, errorType);
 
     this.applyPresetHeaders(exception, httpContext);
 
     if (exception.status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger?.error('捕获到内部异常', undefined, {
+      this.logger?.error({
+        message: '捕获到内部异常',
         exceptionName: exception.name,
         status: exception.status,
         requestId,
@@ -56,7 +59,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
         console.error('[HttpExceptionFilter]', exception);
       }
     } else {
-      this.logger?.warn('捕获到业务异常', {
+      this.logger?.warn({
+        message: '捕获到业务异常',
         exceptionName: exception.name,
         status: exception.status,
         requestId,

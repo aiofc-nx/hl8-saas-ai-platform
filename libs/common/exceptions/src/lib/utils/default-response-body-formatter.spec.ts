@@ -70,4 +70,51 @@ describe('responseBodyFormatter', () => {
       data: { payload: 'invalid' },
     });
   });
+
+  it('应处理数组类型的消息', () => {
+    const exception = new BadRequestException({
+      message: ['错误1', '错误2'],
+    });
+
+    const host = createArgumentsHostMock('req-array');
+
+    const formatted = responseBodyFormatter(host, exception, {
+      field1: '错误1',
+      field2: '错误2',
+    });
+
+    expect(formatted.detail).toBe('错误1; 错误2');
+  });
+
+  it('应处理无 errorCode 的 BadRequestException', () => {
+    const exception = new BadRequestException('简单错误');
+
+    const host = createArgumentsHostMock('req-simple');
+
+    const formatted = responseBodyFormatter(host, exception, {
+      field: 'error',
+    });
+
+    expect(formatted).toMatchObject({
+      detail: '简单错误',
+      errorCode: undefined,
+    });
+  });
+
+  it('应处理未知异常类型', () => {
+    const unknownException = { message: 'unknown' };
+
+    const host = createArgumentsHostMock('req-unknown');
+
+    const formatted = responseBodyFormatter(host, unknownException, {
+      error: 'unknown',
+    });
+
+    expect(formatted).toMatchObject({
+      title: '请求无法处理',
+      detail: '无法解析请求体，请稍后重试',
+      status: HttpStatus.BAD_REQUEST,
+      data: { error: 'unknown' },
+    });
+  });
 });

@@ -54,7 +54,8 @@ export class ForbiddenExceptionFilter implements ExceptionFilter {
       instance,
     } satisfies ErrorResponse;
 
-    this.logger?.warn('捕获到 ForbiddenException', {
+    this.logger?.warn({
+      message: '捕获到 ForbiddenException',
       instance,
       detail,
     });

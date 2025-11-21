@@ -19,4 +19,5 @@ export * from './lib/filters/not-found-exception.filter.js';
 export * from './lib/swagger/dto/bad-request-issue.dto.js';
 export * from './lib/swagger/index.js';
 export * from './lib/utils/default-response-body-formatter.js';
+export * from './lib/utils/error-type-resolver.js';
 export * from './lib/utils/request-id.util.js';

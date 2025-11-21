@@ -7,6 +7,7 @@
 - **标准化响应**：通过 `AbstractHttpException` 与一系列通用异常类，统一错误结构与业务字段
 - **统一过滤器**：封装 `AnyExceptionFilter`、`HttpExceptionFilter` 等过滤器，简化异常捕获流程
 - **Swagger 集成**：提供 `ApiBadRequest`、`ApiEntityNotFound` 等装饰器，自动生成错误模型文档
+- **自定义文档链接**：支持配置错误文档链接，自动根据错误码生成符合 RFC7807 的 type 字段
 - **零 i18n 依赖**：默认中文提示，支持自定义 detail、errorCode 与数据载荷
 
 ## 快速开始
@@ -86,8 +87,32 @@ export class UserController {
 }
 ```
 
+## 自定义错误文档链接
+
+支持配置全局错误文档链接，自动根据错误码生成符合 RFC7807 的 `type` 字段：
+
+```ts
+import { configureErrorTypeResolver } from '@hl8/exceptions';
+
+// 在应用启动时配置
+configureErrorTypeResolver({
+  baseUrl: 'https://api.example.com/docs/errors',
+  errorCodeMap: {
+    USER_NOT_FOUND: '/user-not-found',
+    INVALID_EMAIL: '/validation/invalid-email',
+    PERMISSION_DENIED: '/auth/permission-denied',
+  },
+  defaultPath: '/general',
+});
+
+// 使用后，异常响应会自动包含正确的 type 字段：
+// {
+//   "type": "https://api.example.com/docs/errors/user-not-found",
+//   "errorCode": "USER_NOT_FOUND",
+//   ...
+// }
+```
+
 ## TODO
 
-- [ ] 补充单元测试
-- [ ] 支持自定义异常文档链接
 - [ ] 提供与配置中心的集成示例

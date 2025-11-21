@@ -54,7 +54,8 @@ export class NotFoundExceptionFilter implements ExceptionFilter {
       instance,
     } satisfies ErrorResponse;
 
-    this.logger?.warn('捕获到 NotFoundException', {
+    this.logger?.warn({
+      message: '捕获到 NotFoundException',
       instance,
       detail,
     });

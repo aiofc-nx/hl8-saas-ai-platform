@@ -12,8 +12,6 @@
     "validation"
   ],
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,6 +19,8 @@
       "require": "./dist/index.js"
     }
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",

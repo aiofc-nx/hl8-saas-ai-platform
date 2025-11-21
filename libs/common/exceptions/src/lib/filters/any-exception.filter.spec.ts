@@ -63,9 +63,11 @@ describe('AnyExceptionFilter', () => {
     filter.catch(error, host);
 
     expect(logger.error).toHaveBeenCalledWith(
-      '捕获到未处理异常',
-      undefined,
-      expect.objectContaining({ instance: 'req-500', exception: error }),
+      expect.objectContaining({
+        message: '捕获到未处理异常',
+        instance: 'req-500',
+        exception: error,
+      }),
     );
 
     expect(reply).toHaveBeenCalledWith(
@@ -77,5 +79,52 @@ describe('AnyExceptionFilter', () => {
       }),
       HttpStatus.INTERNAL_SERVER_ERROR,
     );
+  });
+
+  it('应支持无 Logger 的情况', () => {
+    const reply = jest.fn();
+    const httpAdapterHost = createHttpAdapterHost(reply);
+    const filter = new AnyExceptionFilter(httpAdapterHost);
+
+    const error = new Error('test');
+    const response = {};
+    const host = createArgumentsHost({ requestId: 'req-no-logger' }, response);
+
+    // 应该使用 console.error 作为后备
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    filter.catch(error, host);
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[AnyExceptionFilter] 捕获到未处理异常',
+      error,
+    );
+    expect(reply).toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
+  });
+
+  it('应处理非 Error 类型的异常', () => {
+    const reply = jest.fn();
+    const httpAdapterHost = createHttpAdapterHost(reply);
+    const logger = { error: jest.fn() };
+
+    const filter = new AnyExceptionFilter(
+      httpAdapterHost,
+      logger as unknown as ConstructorParameters<typeof AnyExceptionFilter>[1],
+    );
+
+    const weirdError = { message: 'weird error' };
+    const response = {};
+    const host = createArgumentsHost({ requestId: 'req-weird' }, response);
+
+    filter.catch(weirdError, host);
+
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        exception: weirdError,
+      }),
+    );
+    expect(reply).toHaveBeenCalled();
   });
 });

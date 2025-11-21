@@ -13,8 +13,13 @@ import { ErrorResponse } from '../dto/error-response.dto.js';
 import { resolveRequestId } from '../utils/request-id.util.js';
 
 type LoggerServiceInstance = InstanceType<typeof Logger>;
+
 /**
  * @description 捕获未处理的异常，避免泄露堆栈信息
+ *
+ * 该过滤器作为最后一道防线，捕获所有未被其他过滤器处理的异常。
+ * 对于 `ServiceUnavailableException`，直接透传其响应；对于其他异常，
+ * 统一返回 500 错误，避免泄露敏感信息。
  */
 @Catch()
 export class AnyExceptionFilter implements ExceptionFilter {
@@ -36,10 +41,17 @@ export class AnyExceptionFilter implements ExceptionFilter {
    * @param host - Nest 运行时上下文
    * @returns void
    */
+  /**
+   * @description 捕获并处理异常
+   * @param exception - 捕获到的未知异常
+   * @param host - Nest 运行时上下文
+   * @returns void
+   */
   catch(exception: unknown, host: ArgumentsHost): void {
     const { httpAdapter } = this.httpAdapterHost;
     const httpContext = host.switchToHttp();
 
+    // 特殊处理：ServiceUnavailableException 直接透传
     if (exception instanceof ServiceUnavailableException) {
       httpAdapter.reply(
         httpContext.getResponse(),
@@ -49,6 +61,7 @@ export class AnyExceptionFilter implements ExceptionFilter {
       return;
     }
 
+    // 其他异常统一返回 500 错误
     const instance = resolveRequestId(httpContext);
     const response: ErrorResponse = {
       type: 'about:blank',
@@ -58,11 +71,14 @@ export class AnyExceptionFilter implements ExceptionFilter {
       instance,
     } satisfies ErrorResponse;
 
-    this.logger?.error('捕获到未处理异常', undefined, {
+    // 记录错误日志
+    this.logger?.error({
+      message: '捕获到未处理异常',
       instance,
       exception,
     });
 
+    // 如果没有配置 Logger，使用 console.error 作为后备
     if (!this.logger) {
       console.error('[AnyExceptionFilter] 捕获到未处理异常', exception);
     }
