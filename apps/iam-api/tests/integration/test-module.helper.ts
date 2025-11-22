@@ -15,9 +15,9 @@ import { DatabaseModule } from '@/database';
 import { AuthModule } from '@/features/auth/auth.module';
 import { FileModule } from '@/features/file/file.module';
 import { HealthModule } from '@/features/health/health.module';
-import { MailModule } from '@/features/mail/mail.module';
 import { UsersModule } from '@/features/users/users.module';
 import { TypedConfigModule } from '@hl8/config';
+import { MailModule } from '@hl8/mail';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -58,7 +58,7 @@ import { testConfigLoader } from './test-config.loader';
     NodeMailerModule,
     LoggerModule,
     ThrottleModule,
-    MailModule,
+    MailModule.forRoot(EnvConfig),
     HealthModule,
     FileModule,
     UsersModule,

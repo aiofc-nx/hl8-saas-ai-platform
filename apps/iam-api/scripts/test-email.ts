@@ -12,9 +12,9 @@
  * ```
  */
 
+import { MailService } from '@hl8/mail';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import { MailService } from '../src/features/mail/mail.service';
 
 async function testEmail() {
   // 获取收件人邮箱地址

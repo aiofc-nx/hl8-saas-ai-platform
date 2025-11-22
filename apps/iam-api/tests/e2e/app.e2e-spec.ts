@@ -1,5 +1,5 @@
 import { AppModule } from '@/app.module';
-import { MailService } from '@/features/mail/mail.service';
+import { MailService } from '@hl8/mail';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { INestApplication } from '@nestjs/common';
 import {
