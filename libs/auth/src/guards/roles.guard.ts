@@ -1,13 +1,15 @@
-import { Role } from '@/common/constants';
-import { ROLES_KEY } from '@/common/decorators';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from '../constants/metadata-keys.constants.js';
+import { Role } from '../types/role.type.js';
 
 /**
  * 角色守卫，用于在 NestJS 应用中强制执行基于角色的访问控制。
  *
  * @description 使用 @Roles() 装饰器设置的元数据来确定路由允许的角色。
  * 如果用户的角色匹配所需角色之一，或者用户是 SUPERADMIN，则授予访问权限。
+ *
+ * @template R 角色类型，默认为 Role
  *
  * @example
  * ```typescript
@@ -18,7 +20,7 @@ import { Reflector } from '@nestjs/core';
  * ```
  */
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class RolesGuard<R extends Role = Role> implements CanActivate {
   /**
    * 创建 RolesGuard 实例。
    *
@@ -36,7 +38,7 @@ export class RolesGuard implements CanActivate {
    * @returns 如果用户具有所需角色之一或是 SUPERADMIN，返回 true；否则返回 false。
    */
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<R[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -44,8 +46,8 @@ export class RolesGuard implements CanActivate {
 
     const { user } = context.switchToHttp().getRequest();
 
-    if (user.role === 'SUPERADMIN') return true;
+    if (user?.role === 'SUPERADMIN') return true;
 
-    return requiredRoles.some((role) => user.role === role);
+    return requiredRoles.some((role) => user?.role === role);
   }
 }

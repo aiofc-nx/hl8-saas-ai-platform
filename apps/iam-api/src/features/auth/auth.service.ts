@@ -28,7 +28,7 @@ import {
 } from '@/features/auth/dto';
 import { Otp, TokenTypes } from '@/features/auth/entities/otp.entity';
 import { Session } from '@/features/auth/entities/session.entity';
-import { Profile } from '@/features/users/entities/profile.entity';
+import { Gender, Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
 import {
   GeneralBadRequestException,
@@ -353,6 +353,103 @@ export class AuthService {
   }
 
   /**
+   * 创建微信登录用户。
+   *
+   * @description 为微信扫码登录创建新用户账户，包括：
+   * - 验证用户名和邮箱的唯一性
+   * - 创建用户和个人资料记录
+   * - 使用微信用户信息填充个人资料
+   * - 跳过邮箱验证（微信已认证）
+   *
+   * @param {string} openid - 微信 openid
+   * @param {any} userInfo - 微信用户信息
+   * @returns {Promise<User>} 创建的用户实体
+   * @throws {BadRequestException} 如果用户名或邮箱已存在
+   */
+  async createWechatUser(
+    openid: string,
+    userInfo: {
+      nickname?: string;
+      headimgurl?: string;
+      sex?: number;
+      province?: string;
+      city?: string;
+      country?: string;
+    },
+  ): Promise<User> {
+    const username = `wechat_${openid.slice(0, 12)}`;
+    const email = `${openid}@wechat.local`;
+
+    // 检查是否已存在
+    const existingUser = await this.userRepository.findOne({
+      $or: [{ email }, { username }, { wechatOpenid: openid }],
+    });
+
+    if (existingUser) {
+      // 如果已存在但未绑定微信，绑定微信
+      if (!existingUser.wechatOpenid) {
+        existingUser.wechatOpenid = openid;
+        const em = this.userRepository.getEntityManager();
+        await em.flush();
+      }
+      return existingUser;
+    }
+
+    const result = await this.transactionService.runInTransaction(
+      async (em: EntityManager) => {
+        // 创建用户
+        const user = new User();
+        user.email = email;
+        user.username = username;
+        user.password = undefined; // 微信登录用户不需要密码
+        user.wechatOpenid = openid;
+        user.isEmailVerified = true; // 微信已认证，跳过邮箱验证
+        user.emailVerifiedAt = new Date();
+        em.persist(user);
+
+        // 创建个人资料
+        const profile = new Profile();
+        profile.name = userInfo.nickname || username;
+        profile.user = user;
+        if (userInfo.headimgurl) {
+          profile.profilePicture = userInfo.headimgurl;
+        }
+        // 性别映射：1=男，2=女，0=未知
+        if (userInfo.sex === 1) {
+          profile.gender = Gender.MALE;
+        } else if (userInfo.sex === 2) {
+          profile.gender = Gender.FEMALE;
+        }
+        if (userInfo.province && userInfo.city) {
+          profile.address =
+            `${userInfo.country || ''} ${userInfo.province} ${userInfo.city}`.trim();
+        }
+        em.persist(profile);
+
+        await em.flush();
+
+        return { userId: user.id };
+      },
+    );
+
+    // 重新加载用户
+    const user = await this.userRepository.findOne(
+      { id: result.userId },
+      { populate: ['profile'] },
+    );
+
+    if (!user) {
+      throw new GeneralBadRequestException(
+        [{ field: 'system', message: '用户创建失败' }],
+        '微信登录失败，请稍后重试',
+        'WECHAT_USER_CREATION_FAILED',
+      );
+    }
+
+    return user;
+  }
+
+  /**
    * 用户登录。
    *
    * @description 验证用户凭据，生成访问令牌和刷新令牌，创建会话记录，并发送登录成功邮件。
@@ -427,13 +524,14 @@ export class AuthService {
    * 确认用户邮箱。
    *
    * @description 使用 OTP 验证码确认用户邮箱地址，激活用户账户。
+   * 验证成功后自动生成 JWT 令牌，用户可直接登录。
    *
    * @param {ConfirmEmailDto} dto - 邮箱确认 DTO。
-   * @returns {Promise<void>}
+   * @returns {Promise<LoginUserInterface>} 包含用户数据和令牌的登录响应。
    * @throws {NotFoundException} 如果用户或 OTP 不存在。
    * @throws {BadRequestException} 如果 OTP 验证码无效或已过期。
    */
-  async confirmEmail(dto: ConfirmEmailDto): Promise<void> {
+  async confirmEmail(dto: ConfirmEmailDto): Promise<LoginUserInterface> {
     const user = await this.userRepository.findOne(
       { email: dto.email },
       { populate: ['profile'] },
@@ -467,13 +565,52 @@ export class AuthService {
     await em.flush();
     em.remove(otp);
     await em.flush();
-    await this.mailService.sendEmail({
-      to: [user.email],
-      subject: 'Confirmation Successful',
-      html: ConfirmEmailSuccessMail({
-        name: user.profile.name,
-      }),
-    });
+
+    // 验证成功后自动生成 JWT 令牌，用户可直接登录
+    const tokens = await this.generateTokens(user);
+
+    // 创建会话
+    const session = new Session();
+    session.user = user;
+    session.refresh_token = tokens.refresh_token;
+    session.ip = 'unknown';
+    session.device_name = 'Email Verification';
+    session.device_os = 'unknown';
+    session.browser = 'unknown';
+    session.location = 'unknown';
+    session.userAgent = 'Email Verification';
+    em.persist(session);
+    await em.flush();
+
+    // 发送确认成功邮件
+    try {
+      await this.mailService.sendEmail({
+        to: [user.email],
+        subject: 'Confirmation Successful',
+        html: ConfirmEmailSuccessMail({
+          name: user.profile.name,
+        }),
+      });
+    } catch (mailError) {
+      // 记录邮件发送错误，但不阻止验证成功
+      this.logger.warn('Failed to send confirmation success email', {
+        error:
+          mailError instanceof Error ? mailError.message : String(mailError),
+        email: user.email,
+        userId: user.id,
+      });
+    }
+
+    // 返回用户信息和令牌
+    const session_refresh_time = await generateRefreshTime();
+    return {
+      data: user,
+      tokens: {
+        ...tokens,
+        session_token: session.id,
+        session_refresh_time,
+      },
+    };
   }
 
   /**

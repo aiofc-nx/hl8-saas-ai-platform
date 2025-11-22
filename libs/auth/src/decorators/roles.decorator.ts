@@ -1,12 +1,6 @@
 import { SetMetadata } from '@nestjs/common';
-import { Role } from '../constants';
-
-/**
- * 用于存储路由或控制器所需角色的元数据键。
- *
- * @type {string}
- */
-export const ROLES_KEY: string = 'roles';
+import { ROLES_KEY } from '../constants/metadata-keys.constants.js';
+import { Role } from '../types/role.type.js';
 
 /**
  * 装饰器，用于指定路由或控制器所需的角色。

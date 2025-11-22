@@ -1,4 +1,3 @@
-import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import {
   LoggerModule,
   NodeMailerModule,
@@ -8,6 +7,11 @@ import { DatabaseModule } from '@/database';
 import { AuthModule } from '@/features/auth/auth.module';
 import { FileModule } from '@/features/file/file.module';
 import { UsersModule } from '@/features/users/users.module';
+import {
+  AuthModule as Hl8AuthModule,
+  JwtAuthGuard,
+  RolesGuard,
+} from '@hl8/auth';
 import { TypedConfigModule, dotenvLoader } from '@hl8/config';
 import {
   AnyExceptionFilter,
@@ -74,6 +78,15 @@ import { HealthModule } from './features/health/health.module';
       schema: EnvConfig,
       load: dotenvLoader(),
       isGlobal: true,
+    }),
+    Hl8AuthModule.forRootAsync({
+      inject: [EnvConfig],
+      useFactory: (config: EnvConfig) => ({
+        accessTokenSecret: config.ACCESS_TOKEN_SECRET,
+        accessTokenExpiration: config.ACCESS_TOKEN_EXPIRATION,
+        refreshTokenSecret: config.REFRESH_TOKEN_SECRET,
+        refreshTokenExpiration: config.REFRESH_TOKEN_EXPIRATION,
+      }),
     }),
     DatabaseModule,
     NodeMailerModule,

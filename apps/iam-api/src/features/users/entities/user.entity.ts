@@ -70,6 +70,14 @@ export class User extends Base {
   emailVerifiedAt?: Date;
 
   /**
+   * 微信 openid（如果用户通过微信登录）。
+   *
+   * @type {string}
+   */
+  @Property({ type: 'varchar', nullable: true, unique: true })
+  wechatOpenid?: string;
+
+  /**
    * 用户会话集合。
    *
    * @type {Collection<Session>}

@@ -1,11 +1,19 @@
-import { EnvConfig } from '@/common/utils/validateEnv';
-import { Session } from '@/features/auth/entities/session.entity';
 import { GeneralUnauthorizedException } from '@hl8/exceptions';
-import { InjectRepository } from '@hl8/mikro-orm-nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  Optional,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import {
+  AUTH_CONFIG,
+  SESSION_VERIFIER,
+} from '../constants/auth-tokens.constants.js';
+import type { AuthConfig } from '../interfaces/auth-config.interface.js';
+import type { SessionVerifier } from '../interfaces/session-verifier.interface.js';
 
 /**
  * JWT 刷新令牌守卫，用于在 NestJS 应用中验证刷新令牌。
@@ -14,7 +22,7 @@ import { Request } from 'express';
  * 用于令牌刷新端点，确保只有有效的刷新令牌才能用于生成新的访问令牌。
  * 验证包括：
  * - JWT 令牌签名和有效性
- * - 数据库中会话记录的存在性
+ * - 可选的会话记录验证（如果提供了会话验证器）
  *
  * @example
  * ```typescript
@@ -30,14 +38,15 @@ export class JwtRefreshGuard implements CanActivate {
    * 创建 JwtRefreshGuard 实例。
    *
    * @param jwtService - JWT 服务，用于 JWT 令牌操作（验证、解码）。
-   * @param config - 环境配置，用于访问环境变量。
-   * @param sessionRepository - MikroORM 会话实体仓库，用于查询会话记录。
+   * @param config - 认证配置，用于访问环境变量。
+   * @param sessionVerifier - 可选的会话验证器，用于验证会话记录是否存在。
    */
   constructor(
     private jwtService: JwtService,
-    private config: EnvConfig,
-    @InjectRepository(Session)
-    private readonly sessionRepository: EntityRepository<Session>,
+    @Inject(AUTH_CONFIG) private config: AuthConfig,
+    @Optional()
+    @Inject(SESSION_VERIFIER)
+    private sessionVerifier?: SessionVerifier,
   ) {}
 
   /**
@@ -46,7 +55,7 @@ export class JwtRefreshGuard implements CanActivate {
    * @description 通过以下步骤执行认证：
    * - 从请求头提取刷新令牌
    * - 验证令牌签名和有效性
-   * - 检查数据库中是否存在对应的会话记录
+   * - 如果提供了会话验证器，检查数据库中是否存在对应的会话记录
    * - 将用户负载附加到请求对象
    *
    * @param context - 包含请求/响应信息的执行上下文。
@@ -63,24 +72,34 @@ export class JwtRefreshGuard implements CanActivate {
       );
     }
     try {
-      request.user = await this.jwtService.verifyAsync(token, {
-        secret: this.config.REFRESH_TOKEN_SECRET,
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.config.refreshTokenSecret,
       });
+      // 如果提供了自定义提取器，使用它；否则直接使用负载
+      request.user = this.config.extractUserFromPayload
+        ? this.config.extractUserFromPayload(payload)
+        : payload;
     } catch (_error) {
       throw new GeneralUnauthorizedException(
         '刷新令牌无效或已过期',
         'INVALID_REFRESH_TOKEN',
       );
     }
-    const session = await this.sessionRepository.findOne({
-      refresh_token: token,
-      user: request.user.id,
-    });
-    if (!session)
-      throw new GeneralUnauthorizedException(
-        '刷新令牌对应的会话不存在',
-        'SESSION_NOT_FOUND',
+
+    // 如果提供了会话验证器，验证会话是否存在
+    if (this.sessionVerifier) {
+      const isValidSession = await this.sessionVerifier.verifySession(
+        token,
+        request.user.id,
       );
+      if (!isValidSession) {
+        throw new GeneralUnauthorizedException(
+          '刷新令牌对应的会话不存在',
+          'SESSION_NOT_FOUND',
+        );
+      }
+    }
+
     return true;
   }
 

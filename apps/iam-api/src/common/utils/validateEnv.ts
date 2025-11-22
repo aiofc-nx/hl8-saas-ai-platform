@@ -184,6 +184,26 @@ export class EnvConfig {
   @IsString()
   @IsOptional()
   public readonly AWS_S3_ENDPOINT: string = '';
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  public readonly WECHAT_APP_ID: string = '';
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  public readonly WECHAT_APP_SECRET: string = '';
+
+  @Expose()
+  @IsUrl({ require_tld: false })
+  @IsOptional()
+  public readonly WECHAT_REDIRECT_URI: string = '';
+
+  @Expose()
+  @IsUrl({ require_tld: false })
+  @IsOptional()
+  public readonly FRONTEND_URL: string = 'http://localhost:3000';
 }
 
 /**

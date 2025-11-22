@@ -1,5 +1,5 @@
-import { Public } from '@/common/decorators';
 import { User } from '@/features/users/entities/user.entity';
+import { Public } from '@hl8/auth/decorators';
 import { InjectRepository } from '@hl8/mikro-orm-nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { Controller, Get } from '@nestjs/common';

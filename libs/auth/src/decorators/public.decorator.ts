@@ -1,11 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-
-/**
- * 用于将路由标记为公共（无需认证）的元数据键。
- *
- * @type {string}
- */
-export const IS_PUBLIC_KEY: string = 'isPublic';
+import { IS_PUBLIC_KEY } from '../constants/metadata-keys.constants.js';
 
 /**
  * 自定义装饰器，用于将路由或控制器标记为公共。

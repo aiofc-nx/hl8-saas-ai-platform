@@ -1,5 +1,3 @@
-import { Public } from '@/common/decorators';
-import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
 import {
   MessageResponse,
   RefreshTokenResponse,
@@ -19,6 +17,8 @@ import {
   SignOutAllDeviceUserDto,
   SignOutUserDto,
 } from '@/features/auth/dto';
+import { Public } from '@hl8/auth/decorators';
+import { JwtRefreshGuard } from '@hl8/auth/guards';
 import {
   Body,
   Controller,
@@ -154,18 +154,25 @@ export class AuthController {
    * 确认用户邮箱。
    *
    * @description 使用 OTP 验证码确认用户邮箱地址。
+   * 验证成功后自动生成 JWT 令牌，用户可直接登录。
    * 此端点标记为公共，因为用户可能还没有验证邮箱，无法提供有效的认证令牌。
    *
    * @param {ConfirmEmailDto} confirmEmailDto - 邮箱确认数据。
-   * @returns {Promise<MessageResponse>} 响应消息。
+   * @returns {Promise<SignInResponse>} 包含用户数据和令牌的登录响应。
    */
   @Public()
   @Patch('confirm-email')
   async confirmEmail(
     @Body() confirmEmailDto: ConfirmEmailDto,
-  ): Promise<MessageResponse> {
-    await this.authService.confirmEmail(confirmEmailDto);
-    return { message: 'Email confirmed successfully' };
+  ): Promise<SignInResponse> {
+    const data = await this.authService.confirmEmail(confirmEmailDto);
+    const { password: _password, sessions: _sessions, ...userData } = data.data;
+
+    return {
+      message: 'Email confirmed successfully. You are now logged in.',
+      data: userData,
+      tokens: data.tokens,
+    };
   }
 
   /**
