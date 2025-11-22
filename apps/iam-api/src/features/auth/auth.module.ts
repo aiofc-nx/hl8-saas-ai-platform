@@ -3,7 +3,6 @@ import { Otp } from '@/features/auth/entities/otp.entity';
 import { Session } from '@/features/auth/entities/session.entity';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
-import { MailModule } from '@hl8/mail';
 import { MikroOrmModule } from '@hl8/mikro-orm-nestjs';
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
@@ -18,7 +17,6 @@ import { AuthService } from './auth.service';
   imports: [
     DatabaseModule,
     MikroOrmModule.forFeature({ entities: [User, Session, Otp, Profile] }),
-    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],

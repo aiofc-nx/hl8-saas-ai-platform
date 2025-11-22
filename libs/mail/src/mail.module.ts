@@ -44,7 +44,7 @@ export class MailModule {
         },
       ],
       exports: [MailService],
-      global: false,
+      global: true,
     };
   }
 }
