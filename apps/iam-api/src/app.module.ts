@@ -15,6 +15,7 @@ import {
   HttpExceptionFilter,
   NotFoundExceptionFilter,
 } from '@hl8/exceptions';
+import { MailModule } from '@hl8/mail';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
@@ -22,7 +23,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { EnvConfig } from './common/utils/validateEnv';
 import { HealthModule } from './features/health/health.module';
-import { MailModule } from './features/mail/mail.module';
 
 /**
  * 应用程序根模块。
@@ -79,7 +79,7 @@ import { MailModule } from './features/mail/mail.module';
     NodeMailerModule,
     LoggerModule,
     ThrottleModule,
-    MailModule,
+    MailModule.forRoot(EnvConfig),
     HealthModule,
     FileModule,
     UsersModule,

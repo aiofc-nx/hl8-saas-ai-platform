@@ -1,5 +1,29 @@
 import { APP_NAME, APP_URL } from '@repo/constants/app';
 
+/**
+ * 重置密码邮件模板。
+ *
+ * @description 生成重置密码邮件 HTML 内容。
+ * 包含验证码和重置密码链接，用于用户重置账户密码。
+ *
+ * @param {Object} params - 模板参数对象。
+ * @param {string} params.name - 用户姓名或用户名。
+ * @param {string | number} params.code - 重置密码验证码。
+ * @returns {string} 邮件 HTML 内容。
+ *
+ * @example
+ * ```typescript
+ * const html = ResetPasswordMail({
+ *   name: '张三',
+ *   code: '123456',
+ * });
+ * await mailService.sendEmail({
+ *   to: ['user@example.com'],
+ *   subject: '重置密码',
+ *   html,
+ * });
+ * ```
+ */
 export const ResetPasswordMail = ({
   name,
   code,

@@ -1,4 +1,35 @@
 import { APP_NAME, APP_URL } from '@repo/constants/app';
+
+/**
+ * 登录成功邮件模板。
+ *
+ * @description 生成登录成功通知邮件 HTML 内容。
+ * 用于通知用户账户登录信息，包括登录时间、位置、IP 地址和设备信息，提高账户安全性。
+ *
+ * @param {Object} params - 模板参数对象。
+ * @param {string} params.username - 用户名。
+ * @param {string} params.device - 登录设备信息。
+ * @param {string} params.ipAddress - 登录 IP 地址。
+ * @param {Date} params.loginTime - 登录时间。
+ * @param {string} params.location - 登录位置信息。
+ * @returns {string} 邮件 HTML 内容。
+ *
+ * @example
+ * ```typescript
+ * const html = SignInSuccessMail({
+ *   username: 'zhangsan',
+ *   device: 'Chrome on Windows',
+ *   ipAddress: '192.168.1.1',
+ *   loginTime: new Date(),
+ *   location: 'Beijing, China',
+ * });
+ * await mailService.sendEmail({
+ *   to: ['user@example.com'],
+ *   subject: '登录通知',
+ *   html,
+ * });
+ * ```
+ */
 export const SignInSuccessMail = ({
   username,
   device,
@@ -73,5 +104,3 @@ export const SignInSuccessMail = ({
 </html>
 `;
 };
-
-export default SignInSuccessMail;

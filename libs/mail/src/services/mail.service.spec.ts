@@ -1,8 +1,9 @@
-import { EnvConfig } from '@/common/utils/validateEnv';
+import { Logger } from '@hl8/logger';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
-import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MailService } from './mail.service';
+import type { MailConfig } from '../interfaces/mail-config.interface.js';
+import { MAIL_CONFIG } from '../interfaces/mail-config.interface.js';
+import { MailService } from './mail.service.js';
 
 // Mock @repo/constants/app 模块
 jest.mock('@repo/constants/app', () => ({
@@ -16,12 +17,14 @@ jest.mock('@repo/constants/app', () => ({
  * - 发送邮件
  * - 邮件配置验证
  * - 错误处理和日志记录
+ * - QQ/163 邮箱特殊处理
  */
 describe('MailService', () => {
   let service: MailService;
   let mailerService: jest.Mocked<MailerService>;
-  let config: EnvConfig;
-  let loggerSpy: jest.SpyInstance;
+  let config: { MAIL_USERNAME: string };
+  let loggerDebugSpy: jest.SpyInstance;
+  let loggerErrorSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     // 创建模拟的 MailerService
@@ -29,10 +32,14 @@ describe('MailService', () => {
       sendMail: jest.fn(),
     } as unknown as jest.Mocked<MailerService>;
 
-    // 创建模拟的 EnvConfig
+    // 创建模拟的 MailConfig
     config = {
       MAIL_USERNAME: 'test@example.com',
-    } as EnvConfig;
+    };
+
+    // Mock Logger
+    loggerDebugSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation();
+    loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,22 +49,19 @@ describe('MailService', () => {
           useValue: mailerService,
         },
         {
-          provide: EnvConfig,
-          useValue: config,
+          provide: MAIL_CONFIG,
+          useValue: config as MailConfig,
         },
       ],
     }).compile();
 
     service = module.get<MailService>(MailService);
-
-    // 创建 Logger spy 以测试日志记录
-    loggerSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation();
-    jest.spyOn(Logger.prototype, 'error').mockImplementation();
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-    loggerSpy.mockRestore();
+    loggerDebugSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
   });
 
   it('应该被正确定义', () => {
@@ -74,7 +78,7 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      config.MAIL_USERNAME = 'sender@example.com';
+      Object.assign(config, { MAIL_USERNAME: 'sender@example.com' });
 
       // 执行测试
       await service.sendEmail(mailOptions);
@@ -106,6 +110,82 @@ describe('MailService', () => {
       expect(callArgs.from).toContain('custom@example.com');
     });
 
+    it('应该为普通邮箱使用带名称的发件人格式', async () => {
+      // 准备测试数据
+      const mailOptions: ISendMailOptions = {
+        to: ['recipient@example.com'],
+        subject: 'Test Email',
+        html: '<p>Test</p>',
+      };
+
+      mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
+      config.MAIL_USERNAME = 'sender@gmail.com';
+
+      // 执行测试
+      await service.sendEmail(mailOptions);
+
+      // 验证结果
+      const callArgs = mailerService.sendMail.mock.calls[0][0];
+      expect(callArgs.from).toBe('Test App <sender@gmail.com>');
+    });
+
+    it('应该为QQ邮箱使用纯邮箱地址作为发件人', async () => {
+      // 准备测试数据
+      const mailOptions: ISendMailOptions = {
+        to: ['recipient@example.com'],
+        subject: 'Test Email',
+        html: '<p>Test</p>',
+      };
+
+      mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
+      config.MAIL_USERNAME = 'sender@qq.com';
+
+      // 执行测试
+      await service.sendEmail(mailOptions);
+
+      // 验证结果
+      const callArgs = mailerService.sendMail.mock.calls[0][0];
+      expect(callArgs.from).toBe('sender@qq.com');
+    });
+
+    it('应该为163邮箱使用纯邮箱地址作为发件人', async () => {
+      // 准备测试数据
+      const mailOptions: ISendMailOptions = {
+        to: ['recipient@example.com'],
+        subject: 'Test Email',
+        html: '<p>Test</p>',
+      };
+
+      mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
+      config.MAIL_USERNAME = 'sender@163.com';
+
+      // 执行测试
+      await service.sendEmail(mailOptions);
+
+      // 验证结果
+      const callArgs = mailerService.sendMail.mock.calls[0][0];
+      expect(callArgs.from).toBe('sender@163.com');
+    });
+
+    it('应该为126邮箱使用纯邮箱地址作为发件人', async () => {
+      // 准备测试数据
+      const mailOptions: ISendMailOptions = {
+        to: ['recipient@example.com'],
+        subject: 'Test Email',
+        html: '<p>Test</p>',
+      };
+
+      mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
+      config.MAIL_USERNAME = 'sender@126.com';
+
+      // 执行测试
+      await service.sendEmail(mailOptions);
+
+      // 验证结果
+      const callArgs = mailerService.sendMail.mock.calls[0][0];
+      expect(callArgs.from).toBe('sender@126.com');
+    });
+
     it('应该保留原始邮件选项', async () => {
       // 准备测试数据
       const mailOptions: ISendMailOptions = {
@@ -124,7 +204,7 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      config.MAIL_USERNAME = 'sender@example.com';
+      Object.assign(config, { MAIL_USERNAME: 'sender@example.com' });
 
       // 执行测试
       await service.sendEmail(mailOptions);
@@ -149,13 +229,13 @@ describe('MailService', () => {
       };
 
       mailerService.sendMail = jest.fn().mockResolvedValue(undefined);
-      config.MAIL_USERNAME = 'sender@example.com';
+      Object.assign(config, { MAIL_USERNAME: 'sender@example.com' });
 
       // 执行测试
       await service.sendEmail(mailOptions);
 
       // 验证日志记录
-      expect(Logger.prototype.debug).toHaveBeenCalledWith(
+      expect(loggerDebugSpy).toHaveBeenCalledWith(
         '邮件发送成功',
         expect.objectContaining({
           to: mailOptions.to,
@@ -182,7 +262,7 @@ describe('MailService', () => {
       );
 
       // 验证错误日志记录
-      expect(Logger.prototype.error).toHaveBeenCalledWith(
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
         '邮件发送失败',
         expect.objectContaining({
           error: 'SMTP connection failed',
@@ -209,7 +289,7 @@ describe('MailService', () => {
       await expect(service.sendEmail(mailOptions)).rejects.toBe(error);
 
       // 验证错误日志记录
-      expect(Logger.prototype.error).toHaveBeenCalledWith(
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
         '邮件发送失败',
         expect.objectContaining({
           error: 'String error',

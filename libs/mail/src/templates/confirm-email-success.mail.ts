@@ -1,6 +1,28 @@
 import { APP_NAME, APP_URL } from '@repo/constants/app';
 
-export const ChangePasswordSuccessMail = ({ name }: { name: string }) => {
+/**
+ * 邮箱确认成功邮件模板。
+ *
+ * @description 生成邮箱确认成功通知邮件 HTML 内容。
+ * 用于通知用户邮箱验证操作已成功完成。
+ *
+ * @param {Object} params - 模板参数对象。
+ * @param {string} params.name - 用户姓名或用户名。
+ * @returns {string} 邮件 HTML 内容。
+ *
+ * @example
+ * ```typescript
+ * const html = ConfirmEmailSuccessMail({
+ *   name: '张三',
+ * });
+ * await mailService.sendEmail({
+ *   to: ['user@example.com'],
+ *   subject: '邮箱验证成功',
+ *   html,
+ * });
+ * ```
+ */
+export const ConfirmEmailSuccessMail = ({ name }: { name: string }) => {
   return `
     <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +30,7 @@ export const ChangePasswordSuccessMail = ({ name }: { name: string }) => {
   <meta charset="UTF-8" />
   <meta name="x-apple-disable-message-reformatting" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Password Changed Successfully</title>
+  <title>Email Confirmed</title>
 </head>
 <body style="background-color:#efeff1;margin:0;padding:0;">
 <div style="max-width:580px;margin:30px auto;background:#fff;padding:30px;">
@@ -21,11 +43,15 @@ export const ChangePasswordSuccessMail = ({ name }: { name: string }) => {
   <h4 style="margin:0 0 16px;">Hi, ${name}</h4>
 
   <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-    Your password for <strong>${APP_NAME}</strong> has been successfully changed.
+    Your email address for <strong>${APP_NAME}</strong> has been successfully confirmed.
+  </p>
+
+  <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;text-align:center;">
+    Your action has been successfully confirmed.
   </p>
 
   <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-    If you didn’t make this change, please <a href="${APP_URL}/auth/reset" style="color:#3b82f6;text-decoration:underline;">reset your password</a> immediately and contact support.
+    If you didn't request this confirmation, please contact support immediately.
   </p>
 
   <p style="font-size:14px;line-height:1.5;margin:16px 0;">
@@ -39,6 +65,5 @@ export const ChangePasswordSuccessMail = ({ name }: { name: string }) => {
 </footer>
 </body>
 </html>
-
 `;
 };

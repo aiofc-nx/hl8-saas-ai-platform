@@ -1,6 +1,28 @@
 import { APP_NAME, APP_URL } from '@repo/constants/app';
 
-export const ConfirmEmailSuccessMail = ({ name }: { name: string }) => {
+/**
+ * 修改密码成功邮件模板。
+ *
+ * @description 生成修改密码成功通知邮件 HTML 内容。
+ * 用于通知用户密码已成功修改，并提供安全提示。
+ *
+ * @param {Object} params - 模板参数对象。
+ * @param {string} params.name - 用户姓名或用户名。
+ * @returns {string} 邮件 HTML 内容。
+ *
+ * @example
+ * ```typescript
+ * const html = ChangePasswordSuccessMail({
+ *   name: '张三',
+ * });
+ * await mailService.sendEmail({
+ *   to: ['user@example.com'],
+ *   subject: '密码修改成功',
+ *   html,
+ * });
+ * ```
+ */
+export const ChangePasswordSuccessMail = ({ name }: { name: string }) => {
   return `
     <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +30,7 @@ export const ConfirmEmailSuccessMail = ({ name }: { name: string }) => {
   <meta charset="UTF-8" />
   <meta name="x-apple-disable-message-reformatting" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reset Your Password</title>
+  <title>Password Changed Successfully</title>
 </head>
 <body style="background-color:#efeff1;margin:0;padding:0;">
 <div style="max-width:580px;margin:30px auto;background:#fff;padding:30px;">
@@ -21,18 +43,11 @@ export const ConfirmEmailSuccessMail = ({ name }: { name: string }) => {
   <h4 style="margin:0 0 16px;">Hi, ${name}</h4>
 
   <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-    We received a request to reset your password for your <strong>${APP_NAME}</strong> account.
-  </p>
-  <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-    Use the code below to reset your password:
-  </p>
-
-  <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;text-align:center;">
-    Your action has been successfully confirmed.
+    Your password for <strong>${APP_NAME}</strong> has been successfully changed.
   </p>
 
   <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-    This code will expire in 10 minutes. If you didn’t request a password reset, you can safely ignore this email.
+    If you didn't make this change, please <a href="${APP_URL}/auth/reset" style="color:#3b82f6;text-decoration:underline;">reset your password</a> immediately and contact support.
   </p>
 
   <p style="font-size:14px;line-height:1.5;margin:16px 0;">
@@ -46,5 +61,6 @@ export const ConfirmEmailSuccessMail = ({ name }: { name: string }) => {
 </footer>
 </body>
 </html>
+
 `;
 };

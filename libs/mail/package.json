@@ -1,0 +1,53 @@
+{
+  "name": "@hl8/mail",
+  "version": "0.1.0",
+  "description": "邮件发送服务模块，提供统一的邮件发送功能和常用邮件模板",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "lint": "eslint .",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --passWithNoTests",
+    "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:email": "tsx scripts/test-email.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hl8/config": "workspace:*",
+    "@hl8/logger": "workspace:*",
+    "@nestjs-modules/mailer": "^2.0.2",
+    "@nestjs/common": "11.1.9",
+    "@nestjs/core": "11.1.9",
+    "@repo/constants": "workspace:*",
+    "nodemailer": "^7.0.10"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/ts-config": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "@nestjs/testing": "^11.1.9",
+    "@types/node": "24.10.1",
+    "@types/nodemailer": "^6.4.14",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

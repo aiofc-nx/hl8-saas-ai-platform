@@ -1,5 +1,29 @@
 import { APP_NAME, APP_URL } from '@repo/constants/app';
 
+/**
+ * 注册成功邮件模板。
+ *
+ * @description 生成注册成功邮件 HTML 内容。
+ * 包含邮箱验证码，用于用户完成邮箱验证。
+ *
+ * @param {Object} params - 模板参数对象。
+ * @param {string} params.name - 用户姓名或用户名。
+ * @param {string | number} params.otp - 邮箱验证码（OTP）。
+ * @returns {string} 邮件 HTML 内容。
+ *
+ * @example
+ * ```typescript
+ * const html = RegisterSuccessMail({
+ *   name: '张三',
+ *   otp: '123456',
+ * });
+ * await mailService.sendEmail({
+ *   to: ['user@example.com'],
+ *   subject: '欢迎注册',
+ *   html,
+ * });
+ * ```
+ */
 export const RegisterSuccessMail = ({
   name,
   otp,
@@ -34,7 +58,7 @@ export const RegisterSuccessMail = ({
       </p>
 
       <p style="font-size:14px;line-height:1.5;color:#333;margin:16px 0;">
-        If you didn’t create this account, you can safely ignore this email. Need help?
+        If you didn't create this account, you can safely ignore this email. Need help?
         Visit our <a href="${APP_URL}/support" style="color:#3b82f6;text-decoration:underline;" target="_blank">support center</a>.
       </p>
 

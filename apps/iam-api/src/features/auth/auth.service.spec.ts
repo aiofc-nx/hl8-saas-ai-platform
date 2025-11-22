@@ -1,7 +1,6 @@
 import * as utils from '@/common/utils';
 import { EnvConfig } from '@/common/utils/validateEnv';
 import { TransactionService } from '@/database';
-import { MailService } from '@/features/mail/mail.service';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
 import {
@@ -10,6 +9,7 @@ import {
   GeneralUnauthorizedException,
 } from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
+import { MailService } from '@hl8/mail';
 import { getRepositoryToken } from '@hl8/mikro-orm-nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { JwtService } from '@nestjs/jwt';

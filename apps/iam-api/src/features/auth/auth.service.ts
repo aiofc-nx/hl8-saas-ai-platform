@@ -28,14 +28,6 @@ import {
 } from '@/features/auth/dto';
 import { Otp, TokenTypes } from '@/features/auth/entities/otp.entity';
 import { Session } from '@/features/auth/entities/session.entity';
-import { MailService } from '@/features/mail/mail.service';
-import {
-  ChangePasswordSuccessMail,
-  ConfirmEmailSuccessMail,
-  RegisterSuccessMail,
-  ResetPasswordMail,
-  SignInSuccessMail,
-} from '@/features/mail/templates';
 import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
 import {
@@ -44,6 +36,14 @@ import {
   GeneralUnauthorizedException,
 } from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
+import {
+  ChangePasswordSuccessMail,
+  ConfirmEmailSuccessMail,
+  MailService,
+  RegisterSuccessMail,
+  ResetPasswordMail,
+  SignInSuccessMail,
+} from '@hl8/mail';
 import { InjectRepository } from '@hl8/mikro-orm-nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
