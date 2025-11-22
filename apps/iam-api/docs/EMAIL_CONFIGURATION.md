@@ -99,6 +99,18 @@ MAIL_SECURE=false
 
 ### QQ 邮箱
 
+**推荐配置（使用 465 端口 SSL）：**
+
+```env
+MAIL_HOST=smtp.qq.com
+MAIL_USERNAME=your-email@qq.com
+MAIL_PASSWORD=your-authorization-code  # 必须使用授权码，不是QQ密码
+MAIL_PORT=465
+MAIL_SECURE=true
+```
+
+**备选配置（使用 587 端口 STARTTLS，可能在某些环境下不稳定）：**
+
 ```env
 MAIL_HOST=smtp.qq.com
 MAIL_USERNAME=your-email@qq.com
@@ -106,6 +118,8 @@ MAIL_PASSWORD=your-authorization-code  # 必须使用授权码，不是QQ密码
 MAIL_PORT=587
 MAIL_SECURE=false
 ```
+
+**注意：** 如果使用 587 端口遇到 SSL 版本错误，请改用 465 端口（SSL）。
 
 **获取授权码：**
 

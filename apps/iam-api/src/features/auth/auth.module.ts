@@ -38,14 +38,17 @@ import { WechatAuthService } from './wechat/wechat-auth.service';
     MikroOrmModule.forFeature({
       entities: [User, Session, Otp, Profile, WechatLoginTicket],
     }),
-    // JwtModule 已在全局注册，但为了确保依赖注入正常工作，这里也导入
+    // Hl8AuthModule 在 AppModule 中已全局注册，守卫和依赖自动可用
+    // JwtRefreshGuard、AUTH_CONFIG、JwtService 都从全局模块中获取
+    // 不再需要导入 JwtModule 或提供 JwtRefreshGuard、AUTH_CONFIG
   ],
   controllers: [AuthController, WechatAuthController],
   providers: [
     AuthService,
     SessionVerifierService,
-    SessionVerifierProvider,
+    SessionVerifierProvider, // 保留：应用特定的 SESSION_VERIFIER 实现
     WechatAuthService,
+    // 不再需要 JwtRefreshGuard 和 AUTH_CONFIG（从全局 Hl8AuthModule 获取）
   ],
   exports: [AuthService],
 })

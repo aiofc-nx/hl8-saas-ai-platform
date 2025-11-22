@@ -8,6 +8,7 @@ import {
   IsUrl,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 /**
@@ -196,11 +197,15 @@ export class EnvConfig {
   public readonly WECHAT_APP_SECRET: string = '';
 
   @Expose()
+  @ValidateIf(
+    (o) => o.WECHAT_REDIRECT_URI && o.WECHAT_REDIRECT_URI.trim() !== '',
+  )
   @IsUrl({ require_tld: false })
   @IsOptional()
   public readonly WECHAT_REDIRECT_URI: string = '';
 
   @Expose()
+  @ValidateIf((o) => o.FRONTEND_URL && o.FRONTEND_URL.trim() !== '')
   @IsUrl({ require_tld: false })
   @IsOptional()
   public readonly FRONTEND_URL: string = 'http://localhost:3000';

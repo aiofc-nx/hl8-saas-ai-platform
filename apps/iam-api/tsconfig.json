@@ -5,6 +5,7 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
     "outDir": "./dist",
+    "rootDir": "./src",
     "module": "NodeNext",
     "moduleResolution": "nodenext",
     "target": "ESNext",
@@ -13,5 +14,14 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "test",
+    "tests",
+    "dist",
+    "**/*spec.ts",
+    "jest.config.ts",
+    "scripts/**/*"
+  ]
 }

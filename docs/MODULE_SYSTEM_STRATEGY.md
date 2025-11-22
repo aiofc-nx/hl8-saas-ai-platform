@@ -56,7 +56,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -68,7 +69,7 @@
 
 - ❌ **禁止**声明 `"type": "module"`（库服务于 NestJS，需要 CommonJS）
 - ✅ 必须声明 `"engines": { "node": ">=20" }`
-- ✅ `exports` 字段只需提供 `require` 条件（因为只编译为 CommonJS）
+- ✅ `exports` 字段必须同时提供 `import` 和 `require` 条件（虽然编译为 CommonJS，但提供 `import` 条件可提升兼容性，允许 ESM 项目也能使用）
 - ✅ `main` 字段指向编译后的 CommonJS 文件
 
 #### 1.2 TypeScript 配置

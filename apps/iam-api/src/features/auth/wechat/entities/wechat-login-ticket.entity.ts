@@ -18,12 +18,11 @@ import type { WechatUserInfo } from '../interfaces/wechat-user.interface';
  * @property {string} code - 微信授权码
  * @property {string} openid - 微信用户 openid
  * @property {WechatUserInfo} userInfo - 微信用户信息
- * @property {string} userId - 绑定的系统用户 ID
  * @property {'pending' | 'scanned' | 'success' | 'failed'} status - 状态
  * @property {string} error - 错误信息
  * @property {AuthTokensInterface} tokens - 生成的 JWT 令牌
  * @property {Date} expiresAt - 过期时间
- * @property {Rel<User>} user - 关联的用户
+ * @property {Rel<User>} user - 关联的用户（在绑定模式下用于指定要绑定的用户）
  */
 @Entity()
 export class WechatLoginTicket extends Base {
@@ -58,14 +57,6 @@ export class WechatLoginTicket extends Base {
    */
   @Property({ type: 'json', nullable: true })
   userInfo?: WechatUserInfo;
-
-  /**
-   * 绑定的系统用户 ID。
-   *
-   * @type {string}
-   */
-  @Property({ type: 'uuid', nullable: true })
-  userId?: string;
 
   /**
    * 状态。
@@ -105,6 +96,9 @@ export class WechatLoginTicket extends Base {
 
   /**
    * 关联的用户。
+   *
+   * @description 在绑定模式下，此字段用于指定要绑定微信账号的用户。
+   * 在登录模式下，此字段在扫码成功后自动填充。
    *
    * @type {Rel<User>}
    */

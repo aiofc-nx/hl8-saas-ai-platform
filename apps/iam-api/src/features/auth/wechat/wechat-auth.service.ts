@@ -68,9 +68,12 @@ export class WechatAuthService {
     ticketEntity.ticket = ticket;
     ticketEntity.status = 'pending';
     ticketEntity.expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 分钟过期
-    // 如果是绑定模式，保存用户 ID
+    // 如果是绑定模式，先查询用户并设置关系
     if (userId) {
-      ticketEntity.userId = userId;
+      const user = await this.userRepository.findOne({ id: userId });
+      if (user) {
+        ticketEntity.user = user;
+      }
     }
 
     const em = this.ticketRepository.getEntityManager();
@@ -182,11 +185,12 @@ export class WechatAuthService {
         { populate: ['profile'] },
       );
 
-      // 6. 如果是绑定模式（ticket 中有 userId）
-      if (!user && ticket.userId) {
+      // 6. 如果是绑定模式（ticket 中有 user）
+      if (!user && ticket.user) {
         // 绑定模式：绑定到已存在的用户
+        // 加载用户并填充 profile 关系
         user = await this.userRepository.findOne(
-          { id: ticket.userId },
+          { id: ticket.user.id },
           { populate: ['profile'] },
         );
 
@@ -245,7 +249,6 @@ export class WechatAuthService {
       await em.flush();
 
       // 8. 更新 ticket
-      ticket.userId = user.id;
       ticket.status = 'success';
       ticket.tokens = tokens;
       ticket.user = user;

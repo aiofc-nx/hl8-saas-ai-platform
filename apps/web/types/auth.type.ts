@@ -177,3 +177,43 @@ export const DeleteAccountSchema = z.object({
  * Schema for delete account response data.
  */
 export const DeleteAccountData = z.object({});
+
+/**
+ * Schema for WeChat QR code response.
+ */
+export const WechatQrcodeSchema = z.object({
+  ticket: z.string(),
+  qrcodeUrl: z.string().url(),
+  expiresIn: z.number(),
+});
+
+export type WechatQrcode = z.infer<typeof WechatQrcodeSchema>;
+
+/**
+ * Schema for WeChat login status response.
+ */
+export const WechatStatusSchema = z.object({
+  status: z.enum(['pending', 'scanned', 'success', 'failed']),
+  ticket: z.string(),
+  data: z
+    .object({
+      user: UserSchema,
+      tokens: z.object({
+        access_token: z.string(),
+        refresh_token: z.string(),
+        session_token: z.string(),
+        session_refresh_time: z.string().transform((val) => {
+          // 将 ISO 字符串转换为 Date 对象
+          const date = new Date(val);
+          if (isNaN(date.getTime())) {
+            throw new Error(`Invalid date string: ${val}`);
+          }
+          return date;
+        }),
+      }),
+    })
+    .optional(),
+  error: z.string().optional(),
+});
+
+export type WechatStatus = z.infer<typeof WechatStatusSchema>;

@@ -20,7 +20,7 @@ import {
   NotFoundExceptionFilter,
 } from '@hl8/exceptions';
 import { MailModule } from '@hl8/mail';
-import { MikroORM } from '@mikro-orm/postgresql';
+import { MikroORM } from '@mikro-orm/core';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -71,14 +71,19 @@ import { HealthModule } from './features/health/health.module';
     },
   ],
   imports: [
-    JwtModule.register({
-      global: true,
-    }),
+    // 配置模块必须最先导入，以便其他模块可以使用配置
     TypedConfigModule.forRoot({
       schema: EnvConfig,
       load: dotenvLoader(),
       isGlobal: true,
     }),
+    // JwtModule 必须在所有使用 JwtService 的模块之前导入
+    // 标记为 global: true 以确保 JwtService 在所有模块中可用
+    JwtModule.register({
+      global: true,
+    }),
+    // Hl8AuthModule 依赖 JwtService，必须在 JwtModule 之后导入
+    // 注意：Hl8AuthModule 内部也会导入 JwtModule.register({})，这是为了确保模块内部可以解析 JwtService
     Hl8AuthModule.forRootAsync({
       inject: [EnvConfig],
       useFactory: (config: EnvConfig) => ({

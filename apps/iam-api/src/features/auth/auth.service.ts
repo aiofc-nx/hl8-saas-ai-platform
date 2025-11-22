@@ -301,8 +301,50 @@ export class AuthService {
       // 确保用户实体完全加载并刷新
       await this.userRepository.getEntityManager().refresh(user);
 
-      // 尝试发送邮件，如果失败不影响用户注册
+      // 检查 MailService 是否可用
+      if (!this.mailService) {
+        this.logger.error('MailService is not available', {
+          email: user.email,
+          userId: user.id,
+        });
+        // 即使邮件服务不可用，也继续完成注册
+        return { data: user };
+      }
+
+      // 在开发环境中，将验证码打印到控制台，方便调试
+      if (this.config.NODE_ENV !== 'production') {
+        console.log('');
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
+        console.log('📧 邮箱验证码（仅开发环境显示）');
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
+        console.log(`📬 收件人: ${user.email}`);
+        console.log(`🔑 验证码: ${email_confirmation_otp}`);
+        console.log(
+          `⏰ 过期时间: ${new Date(Date.now() + 1000 * 60 * 60 * 24).toLocaleString('zh-CN')}`,
+        );
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
+        console.log('');
+      }
+
+      // 尝试发送邮件，如果失败不影响用户注册，但记录详细错误
+      let emailSent = false;
+      let emailError: string | undefined;
       try {
+        // 记录邮件发送前的信息
+        this.logger.log('Attempting to send registration email', {
+          email: user.email,
+          userId: user.id,
+          profileName: user.profile?.name,
+          otpLength: email_confirmation_otp.length,
+          mailServiceAvailable: !!this.mailService,
+        });
+
         await this.mailService.sendEmail({
           to: [user.email],
           subject: 'Confirm your email',
@@ -311,23 +353,54 @@ export class AuthService {
             otp: email_confirmation_otp,
           }),
         });
+        emailSent = true;
+        this.logger.log('Registration email sent successfully', {
+          email: user.email,
+          userId: user.id,
+          timestamp: new Date().toISOString(),
+        });
       } catch (mailError) {
         // 记录邮件发送错误，但不阻止用户注册
-        this.logger.warn('Failed to send registration email', {
-          error:
-            mailError instanceof Error ? mailError.message : String(mailError),
+        const errorMessage =
+          mailError instanceof Error ? mailError.message : String(mailError);
+        emailError = errorMessage;
+
+        this.logger.error('Failed to send registration email', {
+          error: errorMessage,
           email: user.email,
+          userId: user.id,
+          stack: mailError instanceof Error ? mailError.stack : undefined,
         });
+
         // 如果邮件配置缺失，提供更明确的错误信息
         if (
           mailError instanceof Error &&
           (mailError.message.includes('auth') ||
             mailError.message.includes('credentials') ||
+            mailError.message.includes('Authentication failed') ||
             mailError.message.includes('MAIL'))
         ) {
+          this.logger.error('邮件服务配置错误。请检查以下环境变量：', {
+            MAIL_HOST: this.config.MAIL_HOST,
+            MAIL_USERNAME: this.config.MAIL_USERNAME,
+            MAIL_PORT: this.config.MAIL_PORT,
+            MAIL_SECURE: this.config.MAIL_SECURE,
+            error: errorMessage,
+          });
           this.logger.error(
-            'Mail service configuration error. Please check MAIL_USERNAME and MAIL_PASSWORD environment variables.',
+            '提示：QQ邮箱需要使用授权码（不是QQ密码），请检查 MAIL_PASSWORD 是否正确。',
           );
+        } else if (
+          mailError instanceof Error &&
+          (mailError.message.includes('connection') ||
+            mailError.message.includes('timeout') ||
+            mailError.message.includes('ENOTFOUND'))
+        ) {
+          this.logger.error('邮件服务器连接失败。请检查：', {
+            MAIL_HOST: this.config.MAIL_HOST,
+            MAIL_PORT: this.config.MAIL_PORT,
+            error: errorMessage,
+          });
         }
       }
       return { data: user };
@@ -640,6 +713,27 @@ export class AuthService {
 
     // 生成新的 OTP
     const email_confirmation_otp = await generateOTP();
+
+    // 在开发环境中，将验证码打印到控制台，方便调试
+    if (this.config.NODE_ENV !== 'production') {
+      console.log('');
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
+      console.log('📧 重新发送邮箱验证码（仅开发环境显示）');
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
+      console.log(`📬 收件人: ${user.email}`);
+      console.log(`🔑 验证码: ${email_confirmation_otp}`);
+      console.log(
+        `⏰ 过期时间: ${new Date(Date.now() + 1000 * 60 * 60 * 24).toLocaleString('zh-CN')}`,
+      );
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
+      console.log('');
+    }
 
     // 删除该用户旧的 EMAIL_CONFIRMATION 类型的 OTP
     // 注意：OTP 实体没有直接关联用户，需要通过其他方式识别
