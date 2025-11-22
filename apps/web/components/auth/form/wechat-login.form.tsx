@@ -15,7 +15,7 @@ import {
 } from '@repo/shadcn/card';
 import { cn } from '@repo/shadcn/lib/utils';
 import { useAction } from 'next-safe-action/hooks';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 // 使用 img 标签显示二维码，通过二维码生成 API
 
 /**
@@ -30,6 +30,7 @@ const WechatLoginForm = () => {
   const [expiresIn, setExpiresIn] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const hasInitialized = useRef(false);
 
   // 生成二维码的动作
   const {
@@ -83,10 +84,23 @@ const WechatLoginForm = () => {
     },
   );
 
-  // 组件挂载时生成二维码
-  useEffect(() => {
+  // 处理重新生成二维码
+  const handleRegenerate = useCallback(() => {
+    setError(null);
+    setQrcodeUrl(null);
+    setTicket(null);
+    setIsPolling(false);
     generateQrcode();
   }, [generateQrcode]);
+
+  // 组件挂载时生成二维码（仅执行一次）
+  useEffect(() => {
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      generateQrcode();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 轮询检查登录状态
   useEffect(() => {
@@ -119,6 +133,20 @@ const WechatLoginForm = () => {
   )?.error?.serverError;
   const displayError = error || generateError || statusError;
 
+  // 确定要显示的描述文本
+  const getDescriptionText = () => {
+    if (displayError) {
+      return displayError;
+    }
+    if (isGenerating) {
+      return '正在生成二维码...';
+    }
+    if (qrcodeUrl) {
+      return '使用微信扫描二维码登录';
+    }
+    return '加载中...';
+  };
+
   return (
     <div className={cn('w-full flex flex-col gap-6')}>
       <Card className="max-w-xl w-full mx-auto">
@@ -128,13 +156,12 @@ const WechatLoginForm = () => {
           <CardDescription
             className={cn('text-start', displayError && 'text-red-500')}
           >
-            {displayError ??
-              (isGenerating ? '正在生成二维码...' : '使用微信扫描二维码登录')}
+            {getDescriptionText()}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-6">
-            {qrcodeUrl ? (
+            {qrcodeUrl && !displayError ? (
               <>
                 <div className="p-4 bg-white rounded-lg">
                   {/* 使用在线二维码生成服务显示二维码 */}
@@ -159,19 +186,19 @@ const WechatLoginForm = () => {
             ) : (
               <div className="flex items-center justify-center h-64">
                 <p className="text-muted-foreground">
-                  {isGenerating ? '正在生成二维码...' : '加载中...'}
+                  {isGenerating
+                    ? '正在生成二维码...'
+                    : displayError || '加载中...'}
                 </p>
               </div>
             )}
             {displayError && (
               <div className="mt-4">
                 <button
-                  onClick={() => {
-                    setError(null);
-                    generateQrcode();
-                  }}
+                  onClick={handleRegenerate}
                   className="text-sm text-primary hover:underline"
                   type="button"
+                  disabled={isGenerating}
                 >
                   重新生成二维码
                 </button>

@@ -689,6 +689,7 @@ export const deleteAccount = safeAction
  * @throws {Error} 当生成二维码请求失败时抛出错误
  */
 export const generateWechatQrcode = safeAction.action(async () => {
+  const { env } = await import('@/lib/env');
   const [error, data] = await safeFetch(
     WechatQrcodeSchema,
     '/auth/wechat/qrcode',
@@ -701,7 +702,14 @@ export const generateWechatQrcode = safeAction.action(async () => {
     },
   );
 
-  if (error || !data) throw new Error(error || 'Failed to generate QR code');
+  if (error || !data) {
+    const errorMessage = error || 'Failed to generate QR code';
+    // 提供更详细的错误信息，包括 API URL 配置
+    const detailedError = errorMessage.includes('API URL')
+      ? errorMessage
+      : `${errorMessage}。请检查后端服务是否正在运行在 ${env.API_URL}，以及网络连接是否正常。`;
+    throw new Error(detailedError);
+  }
   return data;
 });
 
@@ -714,6 +722,7 @@ export const generateWechatQrcode = safeAction.action(async () => {
 export const getWechatLoginStatus = safeAction
   .schema(z.object({ ticket: z.string() }))
   .action(async ({ parsedInput }) => {
+    const { env } = await import('@/lib/env');
     const [error, data] = await safeFetch(
       WechatStatusSchema,
       `/auth/wechat/status?ticket=${parsedInput.ticket}`,
@@ -726,7 +735,12 @@ export const getWechatLoginStatus = safeAction
       },
     );
 
-    if (error) throw new Error(error);
+    if (error) {
+      const detailedError = error.includes('API URL')
+        ? error
+        : `${error}。请检查后端服务是否正在运行在 ${env.API_URL}。`;
+      throw new Error(detailedError);
+    }
     if (!data) throw new Error('No data returned');
     return data;
   });

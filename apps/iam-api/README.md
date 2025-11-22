@@ -46,6 +46,14 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_S3_BUCKET_NAME=
 AWS_S3_ENDPOINT=
+
+# 微信开放平台配置（可选，用于微信扫码登录）
+WECHAT_APP_ID=your_wechat_app_id
+WECHAT_APP_SECRET=your_wechat_app_secret
+WECHAT_REDIRECT_URI=http://localhost:8000/auth/wechat/callback
+
+# 前端地址（用于微信登录重定向）
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### 环境变量说明
@@ -72,6 +80,10 @@ AWS_S3_ENDPOINT=
 - `FILE_SYSTEM`: 文件存储系统（'s3' 或 'public'）
 - `FILE_MAX_SIZE`: 最大文件大小（字节，默认 20MB）
 - `AWS_*`: AWS S3 相关配置（仅在 FILE_SYSTEM=s3 时需要）
+- `WECHAT_APP_ID`: 微信开放平台应用 ID（可选，用于微信扫码登录）
+- `WECHAT_APP_SECRET`: 微信开放平台应用密钥（可选，用于微信扫码登录）
+- `WECHAT_REDIRECT_URI`: 微信授权回调地址（可选，格式：`http://your-domain.com/auth/wechat/callback`）
+- `FRONTEND_URL`: 前端应用地址（用于微信登录成功后的重定向）
 
 ## 数据库迁移
 

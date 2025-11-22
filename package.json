@@ -16,7 +16,7 @@
     "clear:modules": "npx npkill",
     "commit": "cz",
     "dev": "turbo dev",
-    "dev:fastify-api": "pnpm dev --filter=fastify-api",
+    "dev:iam-api": "pnpm dev --filter=iam-api",
     "dev:web": "pnpm dev --filter=web",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
