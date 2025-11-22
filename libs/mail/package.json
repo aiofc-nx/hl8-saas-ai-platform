@@ -31,10 +31,10 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
+    "@nestjs/testing": "^11.1.9",
     "@repo/eslint-config": "workspace:*",
     "@repo/ts-config": "workspace:*",
     "@types/jest": "^30.0.0",
-    "@nestjs/testing": "^11.1.9",
     "@types/node": "24.10.1",
     "@types/nodemailer": "^6.4.14",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
