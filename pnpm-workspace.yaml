@@ -3,6 +3,7 @@ packages:
   - libs/*
   - libs/common/*
   - libs/core/*
+  - libs/domains/*
   - packages/*
 onlyBuiltDependencies:
   - '@nestjs/core'
