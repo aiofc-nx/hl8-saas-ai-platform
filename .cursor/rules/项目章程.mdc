@@ -28,12 +28,10 @@ alwaysApply: true
 - **模块系统规范**：
   - **库项目（libs/**）**：`package.json` 中**禁止**声明 `type: "module"`，编译为 CommonJS 格式（服务于 NestJS）。必须通过 `exports` 字段同时提供 `import` 和 `require` 条件，确保可在 CommonJS 和 ESM 环境中使用。必须声明 `engines: { "node": ">=20" }`。
   - **NestJS 应用（apps/*-api）**：`package.json` 中**禁止**声明 `type: "module"`，运行时必须使用 CommonJS。TypeScript 配置使用 `NodeNext` 仅用于类型检查，实际编译输出由 SWC 处理为 CommonJS。
-  - **前端应用（apps/web）**：`package.json` 中需声明 `type: "module"`，使用 ESM 格式。
+  - **前端应用（apps/web）**：前端应用配置不执行后端项目的规范，根据选用的框架另行规定。
 - 服务端基础框架固定为 NestJS + Fastify，无需兼容 Express。
 - 数据访问层统一使用 MikroORM 管理实体生命周期与迁移。
 - 关系型数据库选型锁定 PostgreSQL，文档型数据库选型锁定 MongoDB。
-- 领域命令与查询处理须引入 `@nestjs/cqrs` 实现 CQRS 分层。
-- 权限控制统一引入 CASL（`@casl/ability`）建模权限策略。
 
 **理由**：统一技术栈、框架与依赖选择可提升跨团队协作效率，降低学习成本，并确保在性能、扩展性与安全性上的基线能力一致。区分库与应用的模块系统规范，既保证了库的现代化（ESM），又兼容了 NestJS 的运行时要求（CommonJS）。
 
