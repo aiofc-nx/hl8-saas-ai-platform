@@ -30,8 +30,16 @@ export default auth(async (req) => {
   // 验证服务器端会话
   if (req.auth && req.auth.user) {
     console.log(`========== 验证服务器会话开始 =========`);
-    await validateSessionIfExist();
-    console.log('========== 验证服务器会话结束 =========');
+    try {
+      await validateSessionIfExist();
+      console.log('========== 验证服务器会话结束 =========');
+    } catch (error) {
+      // 会话验证失败时，记录错误但不阻止请求
+      // 因为可能是未登录用户访问公开页面，或者会话已过期需要重新登录
+      console.error('========== 验证服务器会话失败 =========', error);
+      // 不抛出错误，让请求继续处理
+      // NextAuth 会自动处理未认证的请求
+    }
   }
 });
 

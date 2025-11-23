@@ -1,6 +1,6 @@
-import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
 import { EnvConfig } from '@/common/utils/validateEnv';
 import { User } from '@/features/users/entities/user.entity';
+import { JwtRefreshGuard } from '@hl8/auth/guards';
 import { getRepositoryToken } from '@hl8/mikro-orm-nestjs';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -249,13 +249,34 @@ describe('AuthController', () => {
         token: '123456',
       };
 
-      authService.confirmEmail = jest.fn().mockResolvedValue(undefined);
+      const user = {
+        id: '1',
+        email: 'test@example.com',
+        username: 'testuser',
+        profile: { name: 'Test User' },
+      } as User;
+
+      const tokens = {
+        access_token: 'access-token',
+        refresh_token: 'refresh-token',
+        session_token: 'session-1',
+        session_refresh_time: new Date().toISOString(),
+      };
+
+      authService.confirmEmail = jest.fn().mockResolvedValue({
+        data: user,
+        tokens,
+      });
 
       // 执行测试
       const result = await controller.confirmEmail(dto);
 
       // 验证结果
-      expect(result).toEqual({ message: 'Email confirmed successfully' });
+      expect(result.message).toBe(
+        'Email confirmed successfully. You are now logged in.',
+      );
+      expect(result.data).not.toHaveProperty('password');
+      expect(result.tokens).toEqual(tokens);
       expect(authService.confirmEmail).toHaveBeenCalledWith(dto);
     });
   });
@@ -364,6 +385,26 @@ describe('AuthController', () => {
       // 验证结果
       expect(result).toEqual({ message: 'User deleted successfully' });
       expect(authService.deleteAccount).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('resendConfirmationEmail', () => {
+    it('应该成功重新发送邮箱确认邮件', async () => {
+      // 准备测试数据
+      const email = 'test@example.com';
+
+      authService.resendConfirmationEmail = jest
+        .fn()
+        .mockResolvedValue(undefined);
+
+      // 执行测试
+      const result = await controller.resendConfirmationEmail(email);
+
+      // 验证结果
+      expect(result).toEqual({
+        message: 'Confirmation email sent successfully',
+      });
+      expect(authService.resendConfirmationEmail).toHaveBeenCalledWith(email);
     });
   });
 });

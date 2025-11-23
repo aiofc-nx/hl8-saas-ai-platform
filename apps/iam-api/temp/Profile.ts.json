@@ -96,6 +96,6 @@
     "collection": "profile"
   },
   "origin": "./src/features/users/entities/profile.entity.ts",
-  "hash": "58128866013e1d8af7f71b2b35e16b96",
+  "hash": "1c86ae3ebe8d270414a161df987509d5",
   "version": "6.6.0"
 }

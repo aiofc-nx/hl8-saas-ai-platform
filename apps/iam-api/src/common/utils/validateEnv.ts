@@ -1,3 +1,4 @@
+import type { MailConfig } from '@hl8/mail';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -8,6 +9,7 @@ import {
   IsUrl,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 /**
@@ -31,7 +33,7 @@ import {
  * })
  * ```
  */
-export class EnvConfig {
+export class EnvConfig implements MailConfig {
   /**
    * 索引签名，用于满足 ConfigRecord 类型要求。
    * @internal
@@ -184,6 +186,30 @@ export class EnvConfig {
   @IsString()
   @IsOptional()
   public readonly AWS_S3_ENDPOINT: string = '';
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  public readonly WECHAT_APP_ID: string = '';
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  public readonly WECHAT_APP_SECRET: string = '';
+
+  @Expose()
+  @ValidateIf(
+    (o) => o.WECHAT_REDIRECT_URI && o.WECHAT_REDIRECT_URI.trim() !== '',
+  )
+  @IsUrl({ require_tld: false })
+  @IsOptional()
+  public readonly WECHAT_REDIRECT_URI: string = '';
+
+  @Expose()
+  @ValidateIf((o) => o.FRONTEND_URL && o.FRONTEND_URL.trim() !== '')
+  @IsUrl({ require_tld: false })
+  @IsOptional()
+  public readonly FRONTEND_URL: string = 'http://localhost:3000';
 }
 
 /**

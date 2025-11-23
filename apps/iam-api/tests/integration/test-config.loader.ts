@@ -57,7 +57,7 @@ export const testConfigLoader = (): ConfigLoader => {
     DB_USERNAME: dbUsername,
     DB_PASSWORD: dbPassword,
     DB_NAME: dbName,
-    DB_SSL: process.env.DB_SSL === 'true',
+    DB_SSL: process.env.DB_SSL === 'true' || false,
     MAIL_HOST: process.env.MAIL_HOST || 'smtp.invalid',
     MAIL_USERNAME: process.env.MAIL_USERNAME || 'test@invalid.com',
     MAIL_PASSWORD: process.env.MAIL_PASSWORD || 'invalid',
@@ -70,5 +70,11 @@ export const testConfigLoader = (): ConfigLoader => {
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
     AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME || '',
     AWS_S3_ENDPOINT: process.env.AWS_S3_ENDPOINT || '',
+    WECHAT_APP_ID: process.env.WECHAT_APP_ID || '',
+    WECHAT_APP_SECRET: process.env.WECHAT_APP_SECRET || '',
+    WECHAT_REDIRECT_URI:
+      process.env.WECHAT_REDIRECT_URI ||
+      'http://localhost:3000/auth/wechat/callback',
+    FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   });
 };

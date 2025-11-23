@@ -20,12 +20,16 @@ import {
   SignInSchema,
   SignOutSchema,
   SignUpSchema,
+  WechatQrcodeSchema,
+  WechatStatusSchema,
 } from '@/types/auth.type';
 import { DefaultReturnSchema } from '@/types/default.type';
+import { UserSchema } from '@/types/user.type';
 import { AuthError, User } from 'next-auth';
 import { revalidateTag } from 'next/cache';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 
 /**
  * @description 解析并发送基于凭证的登录请求（包含设备信息）到后端
@@ -678,3 +682,153 @@ export const deleteAccount = safeAction
     if (error) throw new Error(error);
     redirect('/auth/sign-in');
   });
+
+/**
+ * @description 生成微信登录二维码的服务器动作
+ * @returns 返回包含 ticket、qrcodeUrl 和 expiresIn 的对象
+ * @throws {Error} 当生成二维码请求失败时抛出错误
+ */
+export const generateWechatQrcode = safeAction.action(async () => {
+  const { env } = await import('@/lib/env');
+  const [error, data] = await safeFetch(
+    WechatQrcodeSchema,
+    '/auth/wechat/qrcode',
+    {
+      method: 'GET',
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+      },
+    },
+  );
+
+  if (error || !data) {
+    const errorMessage = error || 'Failed to generate QR code';
+    // 提供更详细的错误信息，包括 API URL 配置
+    const detailedError = errorMessage.includes('API URL')
+      ? errorMessage
+      : `${errorMessage}。请检查后端服务是否正在运行在 ${env.API_URL}，以及网络连接是否正常。`;
+    throw new Error(detailedError);
+  }
+  return data;
+});
+
+/**
+ * @description 获取微信登录状态的服务器动作
+ * @schema z.object({ ticket: z.string() })
+ * @returns 返回登录状态和结果数据
+ * @throws {Error} 当查询登录状态请求失败时抛出错误
+ */
+export const getWechatLoginStatus = safeAction
+  .schema(z.object({ ticket: z.string() }))
+  .action(async ({ parsedInput }) => {
+    const { env } = await import('@/lib/env');
+    const [error, data] = await safeFetch(
+      WechatStatusSchema,
+      `/auth/wechat/status?ticket=${parsedInput.ticket}`,
+      {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          Accept: 'application/json',
+        },
+      },
+    );
+
+    if (error) {
+      const detailedError = error.includes('API URL')
+        ? error
+        : `${error}。请检查后端服务是否正在运行在 ${env.API_URL}。`;
+      throw new Error(detailedError);
+    }
+    if (!data) throw new Error('No data returned');
+    return data;
+  });
+
+/**
+ * @description 处理微信登录成功的服务器动作
+ * @param userData - 用户数据
+ * @param tokens - 令牌数据
+ * @remarks
+ * - 使用微信登录获取的用户信息和令牌创建 NextAuth 会话
+ * - 注意：这个方法需要从客户端调用，因为需要使用 NextAuth 的 update
+ * - 成功后重定向到首页
+ */
+export const handleWechatLoginSuccess = safeAction
+  .schema(
+    z.object({
+      user: UserSchema,
+      tokens: z.object({
+        access_token: z.string(),
+        refresh_token: z.string(),
+        session_token: z.string(),
+        session_refresh_time: z.string(),
+      }),
+    }),
+  )
+  .action(async ({ parsedInput }) => {
+    try {
+      // 构造用户对象（与 authorizeSignIn 返回的格式一致）
+      const user = {
+        id: parsedInput.user.id,
+        email: parsedInput.user.email,
+        username: parsedInput.user.username,
+        isEmailVerified: parsedInput.user.isEmailVerified,
+        emailVerifiedAt: parsedInput.user.emailVerifiedAt,
+        createdAt: parsedInput.user.createdAt,
+        updatedAt: parsedInput.user.updatedAt,
+        profile: parsedInput.user.profile,
+        tokens: {
+          access_token: parsedInput.tokens.access_token,
+          refresh_token: parsedInput.tokens.refresh_token,
+          session_token: parsedInput.tokens.session_token,
+          session_refresh_time: new Date(
+            parsedInput.tokens.session_refresh_time,
+          ),
+        },
+      };
+
+      // 使用 update 更新会话（如果已有会话）或通过 signIn 创建新会话
+      // 但由于微信登录没有密码，我们需要使用自定义的方式
+      // 这里我们使用 update 来设置用户数据，NextAuth 会自动处理
+      await update({
+        user: user as unknown as User,
+      });
+
+      revalidateTag('/auth/wechat');
+      redirect('/');
+    } catch (error) {
+      if (isRedirectError(error)) {
+        throw error;
+      }
+      throw new Error('Failed to handle WeChat login success');
+    }
+  });
+
+/**
+ * @description 生成绑定微信二维码的服务器动作
+ * @returns 返回包含 ticket、qrcodeUrl 和 expiresIn 的对象
+ * @throws {Error} 当生成绑定二维码请求失败时抛出错误
+ * @remarks 需要用户已登录（通过 JWT 认证）
+ */
+export const generateWechatBindQrcode = safeAction.action(async () => {
+  const session = await auth();
+  if (!session?.user) throw new Error('Not authenticated');
+
+  const [error, data] = await safeFetch(
+    WechatQrcodeSchema,
+    '/auth/wechat/bind-qrcode',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${session.user.tokens.access_token}`,
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    },
+  );
+
+  if (error || !data)
+    throw new Error(error || 'Failed to generate bind QR code');
+  return data;
+});

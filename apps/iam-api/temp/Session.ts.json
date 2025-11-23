@@ -116,6 +116,6 @@
     "collection": "session"
   },
   "origin": "./src/features/auth/entities/session.entity.ts",
-  "hash": "2c120dc150436dabc336aa2d90652989",
+  "hash": "88d0f899ee4d1a15c55b1d4107d5e200",
   "version": "6.6.0"
 }

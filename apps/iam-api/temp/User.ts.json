@@ -58,6 +58,18 @@
         "optional": true,
         "runtimeType": "Date"
       },
+      "wechatOpenid": {
+        "name": "wechatOpenid",
+        "kind": "scalar",
+        "type": "varchar",
+        "nullable": true,
+        "unique": true,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "optional": true,
+        "runtimeType": "string"
+      },
       "sessions": {
         "name": "sessions",
         "kind": "1:m",
@@ -94,6 +106,6 @@
     "collection": "user"
   },
   "origin": "./src/features/users/entities/user.entity.ts",
-  "hash": "d6ae5eae184af8b6d5beac3bd40645d8",
+  "hash": "bb45798297ca5d2fc83eefa51297e7d9",
   "version": "6.6.0"
 }

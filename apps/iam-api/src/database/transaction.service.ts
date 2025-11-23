@@ -1,5 +1,6 @@
-import { EntityManager, MikroORM } from '@mikro-orm/postgresql';
-import { Injectable } from '@nestjs/common';
+import type { EntityManager } from '@mikro-orm/core';
+import { MikroORM } from '@mikro-orm/core';
+import { Inject, Injectable } from '@nestjs/common';
 
 /**
  * 事务服务，用于执行数据库事务操作。
@@ -13,8 +14,9 @@ export class TransactionService {
    * 创建 TransactionService 实例。
    *
    * @param orm - MikroORM 实例，通过依赖注入获取。
+   * 注意：使用 @Inject(MikroORM) 显式注入，以确保能正确解析 PostgreSqlMikroORM 实例。
    */
-  constructor(private readonly orm: MikroORM) {}
+  constructor(@Inject(MikroORM) private readonly orm: MikroORM) {}
 
   /**
    * 获取 EntityManager 实例。
@@ -30,6 +32,7 @@ export class TransactionService {
    *
    * @description 使用 MikroORM 的事务管理器执行函数。
    * 如果函数执行成功，事务会自动提交；如果抛出异常，事务会自动回滚。
+   * 使用泛型类型参数，支持任何 EntityManager 的子类型（如 SqlEntityManager）。
    *
    * @param fn - 接收事务感知的 EntityManager 的函数。
    * @returns 函数返回值的 Promise。
@@ -44,11 +47,11 @@ export class TransactionService {
    * });
    * ```
    */
-  async runInTransaction<T>(
-    fn: (manager: EntityManager) => Promise<T>,
+  async runInTransaction<T, EM extends EntityManager = EntityManager>(
+    fn: (manager: EM) => Promise<T>,
   ): Promise<T> {
     return this.em.transactional(async (em) => {
-      return fn(em);
+      return fn(em as EM);
     });
   }
 }

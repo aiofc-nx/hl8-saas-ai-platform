@@ -1,4 +1,3 @@
-import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import {
   LoggerModule,
   NodeMailerModule,
@@ -8,6 +7,11 @@ import { DatabaseModule } from '@/database';
 import { AuthModule } from '@/features/auth/auth.module';
 import { FileModule } from '@/features/file/file.module';
 import { UsersModule } from '@/features/users/users.module';
+import {
+  AuthModule as Hl8AuthModule,
+  JwtAuthGuard,
+  RolesGuard,
+} from '@hl8/auth';
 import { TypedConfigModule, dotenvLoader } from '@hl8/config';
 import {
   AnyExceptionFilter,
@@ -15,14 +19,14 @@ import {
   HttpExceptionFilter,
   NotFoundExceptionFilter,
 } from '@hl8/exceptions';
-import { MikroORM } from '@mikro-orm/postgresql';
+import { MailModule } from '@hl8/mail';
+import { MikroORM } from '@mikro-orm/core';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { EnvConfig } from './common/utils/validateEnv';
 import { HealthModule } from './features/health/health.module';
-import { MailModule } from './features/mail/mail.module';
 
 /**
  * 应用程序根模块。
@@ -67,19 +71,33 @@ import { MailModule } from './features/mail/mail.module';
     },
   ],
   imports: [
-    JwtModule.register({
-      global: true,
-    }),
+    // 配置模块必须最先导入，以便其他模块可以使用配置
     TypedConfigModule.forRoot({
       schema: EnvConfig,
       load: dotenvLoader(),
       isGlobal: true,
     }),
+    // JwtModule 必须在所有使用 JwtService 的模块之前导入
+    // 标记为 global: true 以确保 JwtService 在所有模块中可用
+    JwtModule.register({
+      global: true,
+    }),
+    // Hl8AuthModule 依赖 JwtService，必须在 JwtModule 之后导入
+    // 注意：Hl8AuthModule 内部也会导入 JwtModule.register({})，这是为了确保模块内部可以解析 JwtService
+    Hl8AuthModule.forRootAsync({
+      inject: [EnvConfig],
+      useFactory: (config: EnvConfig) => ({
+        accessTokenSecret: config.ACCESS_TOKEN_SECRET,
+        accessTokenExpiration: config.ACCESS_TOKEN_EXPIRATION,
+        refreshTokenSecret: config.REFRESH_TOKEN_SECRET,
+        refreshTokenExpiration: config.REFRESH_TOKEN_EXPIRATION,
+      }),
+    }),
     DatabaseModule,
     NodeMailerModule,
     LoggerModule,
     ThrottleModule,
-    MailModule,
+    MailModule.forRoot(EnvConfig),
     HealthModule,
     FileModule,
     UsersModule,

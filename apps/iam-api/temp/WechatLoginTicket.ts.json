@@ -1,0 +1,125 @@
+{
+  "data": {
+    "_id": 10000,
+    "properties": {
+      "ticket": {
+        "name": "ticket",
+        "kind": "scalar",
+        "type": "varchar",
+        "unique": true,
+        "nullable": false,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "runtimeType": "string"
+      },
+      "code": {
+        "name": "code",
+        "kind": "scalar",
+        "type": "varchar",
+        "nullable": true,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "optional": true,
+        "runtimeType": "string"
+      },
+      "openid": {
+        "name": "openid",
+        "kind": "scalar",
+        "type": "varchar",
+        "nullable": true,
+        "unique": true,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "optional": true,
+        "runtimeType": "string"
+      },
+      "userInfo": {
+        "name": "userInfo",
+        "kind": "scalar",
+        "type": "json",
+        "nullable": true,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "optional": true,
+        "runtimeType": "WechatUserInfo"
+      },
+      "status": {
+        "name": "status",
+        "kind": "scalar",
+        "type": "varchar",
+        "default": "pending",
+        "nullable": false,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "runtimeType": "\"pending\" | \"scanned\" | \"success\" | \"failed\""
+      },
+      "error": {
+        "name": "error",
+        "kind": "scalar",
+        "type": "text",
+        "nullable": true,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "optional": true,
+        "runtimeType": "string"
+      },
+      "tokens": {
+        "name": "tokens",
+        "kind": "scalar",
+        "type": "json",
+        "nullable": true,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "optional": true,
+        "runtimeType": "AuthTokensInterface"
+      },
+      "expiresAt": {
+        "name": "expiresAt",
+        "kind": "scalar",
+        "type": "timestamp",
+        "nullable": false,
+        "getter": false,
+        "setter": false,
+        "array": false,
+        "runtimeType": "Date"
+      },
+      "user": {
+        "name": "user",
+        "kind": "m:1",
+        "cascade": ["persist"],
+        "nullable": true,
+        "owner": true,
+        "createForeignKeyConstraint": true,
+        "type": "User",
+        "array": false,
+        "optional": true,
+        "runtimeType": "User"
+      }
+    },
+    "primaryKeys": [],
+    "filters": {},
+    "hooks": {},
+    "indexes": [],
+    "uniques": [],
+    "className": "WechatLoginTicket",
+    "path": "./src/features/auth/wechat/entities/wechat-login-ticket.entity.ts",
+    "name": "WechatLoginTicket",
+    "abstract": false,
+    "internal": true,
+    "constructorParams": [],
+    "toJsonParams": [],
+    "extends": "Base",
+    "useCache": true,
+    "collection": "wechat_login_ticket"
+  },
+  "origin": "./src/features/auth/wechat/entities/wechat-login-ticket.entity.ts",
+  "hash": "25af9c6033a83ade8cb50ec3165da5e1",
+  "version": "6.6.0"
+}

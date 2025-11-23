@@ -1,0 +1,16 @@
+{
+  "extends": "@repo/ts-config/nestjs.json",
+  "compilerOptions": {
+    "strict": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": false,
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "target": "ESNext",
+    "isolatedModules": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

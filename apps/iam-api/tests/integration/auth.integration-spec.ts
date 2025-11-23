@@ -1,9 +1,9 @@
 import { AuthService } from '@/features/auth/auth.service';
 import { CreateUserDto } from '@/features/auth/dto';
 import { Session } from '@/features/auth/entities/session.entity';
-import { MailService } from '@/features/mail/mail.service';
 import { User } from '@/features/users/entities/user.entity';
 import { UsersService } from '@/features/users/users.service';
+import { MailService } from '@hl8/mail';
 import { MikroORM } from '@mikro-orm/postgresql';
 import { INestApplication } from '@nestjs/common';
 import {

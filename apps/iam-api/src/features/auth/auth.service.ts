@@ -28,15 +28,7 @@ import {
 } from '@/features/auth/dto';
 import { Otp, TokenTypes } from '@/features/auth/entities/otp.entity';
 import { Session } from '@/features/auth/entities/session.entity';
-import { MailService } from '@/features/mail/mail.service';
-import {
-  ChangePasswordSuccessMail,
-  ConfirmEmailSuccessMail,
-  RegisterSuccessMail,
-  ResetPasswordMail,
-  SignInSuccessMail,
-} from '@/features/mail/templates';
-import { Profile } from '@/features/users/entities/profile.entity';
+import { Gender, Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
 import {
   GeneralBadRequestException,
@@ -44,6 +36,14 @@ import {
   GeneralUnauthorizedException,
 } from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
+import {
+  ChangePasswordSuccessMail,
+  ConfirmEmailSuccessMail,
+  MailService,
+  RegisterSuccessMail,
+  ResetPasswordMail,
+  SignInSuccessMail,
+} from '@hl8/mail';
 import { InjectRepository } from '@hl8/mikro-orm-nestjs';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { Injectable } from '@nestjs/common';
@@ -301,8 +301,50 @@ export class AuthService {
       // 确保用户实体完全加载并刷新
       await this.userRepository.getEntityManager().refresh(user);
 
-      // 尝试发送邮件，如果失败不影响用户注册
+      // 检查 MailService 是否可用
+      if (!this.mailService) {
+        this.logger.error('MailService is not available', {
+          email: user.email,
+          userId: user.id,
+        });
+        // 即使邮件服务不可用，也继续完成注册
+        return { data: user };
+      }
+
+      // 在开发环境中，将验证码打印到控制台，方便调试
+      if (this.config.NODE_ENV !== 'production') {
+        console.log('');
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
+        console.log('📧 邮箱验证码（仅开发环境显示）');
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
+        console.log(`📬 收件人: ${user.email}`);
+        console.log(`🔑 验证码: ${email_confirmation_otp}`);
+        console.log(
+          `⏰ 过期时间: ${new Date(Date.now() + 1000 * 60 * 60 * 24).toLocaleString('zh-CN')}`,
+        );
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
+        console.log('');
+      }
+
+      // 尝试发送邮件，如果失败不影响用户注册，但记录详细错误
+      let emailSent = false;
+      let emailError: string | undefined;
       try {
+        // 记录邮件发送前的信息
+        this.logger.log('Attempting to send registration email', {
+          email: user.email,
+          userId: user.id,
+          profileName: user.profile?.name,
+          otpLength: email_confirmation_otp.length,
+          mailServiceAvailable: !!this.mailService,
+        });
+
         await this.mailService.sendEmail({
           to: [user.email],
           subject: 'Confirm your email',
@@ -311,23 +353,54 @@ export class AuthService {
             otp: email_confirmation_otp,
           }),
         });
+        emailSent = true;
+        this.logger.log('Registration email sent successfully', {
+          email: user.email,
+          userId: user.id,
+          timestamp: new Date().toISOString(),
+        });
       } catch (mailError) {
         // 记录邮件发送错误，但不阻止用户注册
-        this.logger.warn('Failed to send registration email', {
-          error:
-            mailError instanceof Error ? mailError.message : String(mailError),
+        const errorMessage =
+          mailError instanceof Error ? mailError.message : String(mailError);
+        emailError = errorMessage;
+
+        this.logger.error('Failed to send registration email', {
+          error: errorMessage,
           email: user.email,
+          userId: user.id,
+          stack: mailError instanceof Error ? mailError.stack : undefined,
         });
+
         // 如果邮件配置缺失，提供更明确的错误信息
         if (
           mailError instanceof Error &&
           (mailError.message.includes('auth') ||
             mailError.message.includes('credentials') ||
+            mailError.message.includes('Authentication failed') ||
             mailError.message.includes('MAIL'))
         ) {
+          this.logger.error('邮件服务配置错误。请检查以下环境变量：', {
+            MAIL_HOST: this.config.MAIL_HOST,
+            MAIL_USERNAME: this.config.MAIL_USERNAME,
+            MAIL_PORT: this.config.MAIL_PORT,
+            MAIL_SECURE: this.config.MAIL_SECURE,
+            error: errorMessage,
+          });
           this.logger.error(
-            'Mail service configuration error. Please check MAIL_USERNAME and MAIL_PASSWORD environment variables.',
+            '提示：QQ邮箱需要使用授权码（不是QQ密码），请检查 MAIL_PASSWORD 是否正确。',
           );
+        } else if (
+          mailError instanceof Error &&
+          (mailError.message.includes('connection') ||
+            mailError.message.includes('timeout') ||
+            mailError.message.includes('ENOTFOUND'))
+        ) {
+          this.logger.error('邮件服务器连接失败。请检查：', {
+            MAIL_HOST: this.config.MAIL_HOST,
+            MAIL_PORT: this.config.MAIL_PORT,
+            error: errorMessage,
+          });
         }
       }
       return { data: user };
@@ -350,6 +423,103 @@ export class AuthService {
         'REGISTRATION_FAILED',
       );
     }
+  }
+
+  /**
+   * 创建微信登录用户。
+   *
+   * @description 为微信扫码登录创建新用户账户，包括：
+   * - 验证用户名和邮箱的唯一性
+   * - 创建用户和个人资料记录
+   * - 使用微信用户信息填充个人资料
+   * - 跳过邮箱验证（微信已认证）
+   *
+   * @param {string} openid - 微信 openid
+   * @param {any} userInfo - 微信用户信息
+   * @returns {Promise<User>} 创建的用户实体
+   * @throws {BadRequestException} 如果用户名或邮箱已存在
+   */
+  async createWechatUser(
+    openid: string,
+    userInfo: {
+      nickname?: string;
+      headimgurl?: string;
+      sex?: number;
+      province?: string;
+      city?: string;
+      country?: string;
+    },
+  ): Promise<User> {
+    const username = `wechat_${openid.slice(0, 12)}`;
+    const email = `${openid}@wechat.local`;
+
+    // 检查是否已存在
+    const existingUser = await this.userRepository.findOne({
+      $or: [{ email }, { username }, { wechatOpenid: openid }],
+    });
+
+    if (existingUser) {
+      // 如果已存在但未绑定微信，绑定微信
+      if (!existingUser.wechatOpenid) {
+        existingUser.wechatOpenid = openid;
+        const em = this.userRepository.getEntityManager();
+        await em.flush();
+      }
+      return existingUser;
+    }
+
+    const result = await this.transactionService.runInTransaction(
+      async (em: EntityManager) => {
+        // 创建用户
+        const user = new User();
+        user.email = email;
+        user.username = username;
+        user.password = undefined; // 微信登录用户不需要密码
+        user.wechatOpenid = openid;
+        user.isEmailVerified = true; // 微信已认证，跳过邮箱验证
+        user.emailVerifiedAt = new Date();
+        em.persist(user);
+
+        // 创建个人资料
+        const profile = new Profile();
+        profile.name = userInfo.nickname || username;
+        profile.user = user;
+        if (userInfo.headimgurl) {
+          profile.profilePicture = userInfo.headimgurl;
+        }
+        // 性别映射：1=男，2=女，0=未知
+        if (userInfo.sex === 1) {
+          profile.gender = Gender.MALE;
+        } else if (userInfo.sex === 2) {
+          profile.gender = Gender.FEMALE;
+        }
+        if (userInfo.province && userInfo.city) {
+          profile.address =
+            `${userInfo.country || ''} ${userInfo.province} ${userInfo.city}`.trim();
+        }
+        em.persist(profile);
+
+        await em.flush();
+
+        return { userId: user.id };
+      },
+    );
+
+    // 重新加载用户
+    const user = await this.userRepository.findOne(
+      { id: result.userId },
+      { populate: ['profile'] },
+    );
+
+    if (!user) {
+      throw new GeneralBadRequestException(
+        [{ field: 'system', message: '用户创建失败' }],
+        '微信登录失败，请稍后重试',
+        'WECHAT_USER_CREATION_FAILED',
+      );
+    }
+
+    return user;
   }
 
   /**
@@ -427,13 +597,14 @@ export class AuthService {
    * 确认用户邮箱。
    *
    * @description 使用 OTP 验证码确认用户邮箱地址，激活用户账户。
+   * 验证成功后自动生成 JWT 令牌，用户可直接登录。
    *
    * @param {ConfirmEmailDto} dto - 邮箱确认 DTO。
-   * @returns {Promise<void>}
+   * @returns {Promise<LoginUserInterface>} 包含用户数据和令牌的登录响应。
    * @throws {NotFoundException} 如果用户或 OTP 不存在。
    * @throws {BadRequestException} 如果 OTP 验证码无效或已过期。
    */
-  async confirmEmail(dto: ConfirmEmailDto): Promise<void> {
+  async confirmEmail(dto: ConfirmEmailDto): Promise<LoginUserInterface> {
     const user = await this.userRepository.findOne(
       { email: dto.email },
       { populate: ['profile'] },
@@ -467,13 +638,52 @@ export class AuthService {
     await em.flush();
     em.remove(otp);
     await em.flush();
-    await this.mailService.sendEmail({
-      to: [user.email],
-      subject: 'Confirmation Successful',
-      html: ConfirmEmailSuccessMail({
-        name: user.profile.name,
-      }),
-    });
+
+    // 验证成功后自动生成 JWT 令牌，用户可直接登录
+    const tokens = await this.generateTokens(user);
+
+    // 创建会话
+    const session = new Session();
+    session.user = user;
+    session.refresh_token = tokens.refresh_token;
+    session.ip = 'unknown';
+    session.device_name = 'Email Verification';
+    session.device_os = 'unknown';
+    session.browser = 'unknown';
+    session.location = 'unknown';
+    session.userAgent = 'Email Verification';
+    em.persist(session);
+    await em.flush();
+
+    // 发送确认成功邮件
+    try {
+      await this.mailService.sendEmail({
+        to: [user.email],
+        subject: 'Confirmation Successful',
+        html: ConfirmEmailSuccessMail({
+          name: user.profile.name,
+        }),
+      });
+    } catch (mailError) {
+      // 记录邮件发送错误，但不阻止验证成功
+      this.logger.warn('Failed to send confirmation success email', {
+        error:
+          mailError instanceof Error ? mailError.message : String(mailError),
+        email: user.email,
+        userId: user.id,
+      });
+    }
+
+    // 返回用户信息和令牌
+    const session_refresh_time = await generateRefreshTime();
+    return {
+      data: user,
+      tokens: {
+        ...tokens,
+        session_token: session.id,
+        session_refresh_time,
+      },
+    };
   }
 
   /**
@@ -503,6 +713,27 @@ export class AuthService {
 
     // 生成新的 OTP
     const email_confirmation_otp = await generateOTP();
+
+    // 在开发环境中，将验证码打印到控制台，方便调试
+    if (this.config.NODE_ENV !== 'production') {
+      console.log('');
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
+      console.log('📧 重新发送邮箱验证码（仅开发环境显示）');
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
+      console.log(`📬 收件人: ${user.email}`);
+      console.log(`🔑 验证码: ${email_confirmation_otp}`);
+      console.log(
+        `⏰ 过期时间: ${new Date(Date.now() + 1000 * 60 * 60 * 24).toLocaleString('zh-CN')}`,
+      );
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
+      console.log('');
+    }
 
     // 删除该用户旧的 EMAIL_CONFIRMATION 类型的 OTP
     // 注意：OTP 实体没有直接关联用户，需要通过其他方式识别

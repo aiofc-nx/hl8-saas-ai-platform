@@ -9,11 +9,13 @@
 ```env
 # 服务器配置
 HOST=localhost
-PORT=3000
+PORT=8000
 NODE_ENV=development
 
 # CORS 配置
-ALLOW_CORS_URL=http://localhost:3000
+# 允许的 CORS 来源 URL，多个 URL 用逗号分隔
+# 前端开发服务器默认端口通常是 5173（Vite）或 3000
+ALLOW_CORS_URL=http://localhost:5173,http://localhost:3000
 
 # JWT 配置
 ACCESS_TOKEN_SECRET=your-access-token-secret-min-10-chars
@@ -46,14 +48,22 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_S3_BUCKET_NAME=
 AWS_S3_ENDPOINT=
+
+# 微信开放平台配置（可选，用于微信扫码登录）
+WECHAT_APP_ID=your_wechat_app_id
+WECHAT_APP_SECRET=your_wechat_app_secret
+WECHAT_REDIRECT_URI=http://localhost:8000/auth/wechat/callback
+
+# 前端地址（用于微信登录重定向）
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### 环境变量说明
 
 - `HOST`: 服务器主机地址
-- `PORT`: 服务器端口号
+- `PORT`: 服务器端口号（默认：8000）
 - `NODE_ENV`: 运行环境（development/production/test/provision）
-- `ALLOW_CORS_URL`: 允许的 CORS 来源 URL
+- `ALLOW_CORS_URL`: 允许的 CORS 来源 URL，多个 URL 用逗号分隔（例如：`http://localhost:5173,http://localhost:3000`）。前端开发服务器默认端口通常是 5173（Vite）或 3000。**注意**：系统会自动处理 `localhost` 和 `127.0.0.1` 的映射，配置 `localhost` 时会自动允许 `127.0.0.1`，反之亦然。
 - `ACCESS_TOKEN_SECRET`: JWT 访问令牌密钥（最少 10 个字符）
 - `ACCESS_TOKEN_EXPIRATION`: 访问令牌过期时间（如：15m, 1h）
 - `REFRESH_TOKEN_SECRET`: JWT 刷新令牌密钥（最少 10 个字符）
@@ -72,6 +82,10 @@ AWS_S3_ENDPOINT=
 - `FILE_SYSTEM`: 文件存储系统（'s3' 或 'public'）
 - `FILE_MAX_SIZE`: 最大文件大小（字节，默认 20MB）
 - `AWS_*`: AWS S3 相关配置（仅在 FILE_SYSTEM=s3 时需要）
+- `WECHAT_APP_ID`: 微信开放平台应用 ID（可选，用于微信扫码登录）
+- `WECHAT_APP_SECRET`: 微信开放平台应用密钥（可选，用于微信扫码登录）
+- `WECHAT_REDIRECT_URI`: 微信授权回调地址（可选，格式：`http://your-domain.com/auth/wechat/callback`）
+- `FRONTEND_URL`: 前端应用地址（用于微信登录成功后的重定向）
 
 ## 数据库迁移
 
