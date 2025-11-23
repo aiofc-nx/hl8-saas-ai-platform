@@ -2,6 +2,7 @@ packages:
   - apps/*
   - libs/*
   - libs/common/*
+  - libs/core/*
   - packages/*
 onlyBuiltDependencies:
   - '@nestjs/core'
