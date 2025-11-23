@@ -676,7 +676,9 @@ REFRESH_TOKEN_SECRET=your-refresh-token-secret-min-10-chars
 REFRESH_TOKEN_EXPIRATION=7d
 
 # CORS 配置
-ALLOW_CORS_URL=http://localhost:3000
+# 允许的 CORS 来源 URL，多个 URL 用逗号分隔
+# 前端开发服务器默认端口通常是 5173（Vite）或 3000
+ALLOW_CORS_URL=http://localhost:5173,http://localhost:3000
 ```
 
 ### 配置建议

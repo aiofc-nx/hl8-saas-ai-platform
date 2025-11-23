@@ -1,4 +1,5 @@
 import { swagger } from '@/swagger';
+import fastifyCors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
@@ -46,10 +47,42 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
     });
   }
 
+  // 启用 CORS，配置允许的来源和方法
+  // 处理 localhost 和 127.0.0.1 的映射，确保两者都被允许
+  // 注意：CORS 插件应该在 Helmet 之前注册，以确保 CORS 头不会被 Helmet 覆盖
+  const allowedOrigins = config.ALLOW_CORS_URL.split(',').flatMap((url) => {
+    const trimmedUrl = url.trim();
+    // 如果包含 localhost，同时添加 127.0.0.1 版本
+    if (trimmedUrl.includes('localhost')) {
+      return [trimmedUrl, trimmedUrl.replace('localhost', '127.0.0.1')];
+    }
+    // 如果包含 127.0.0.1，同时添加 localhost 版本
+    if (trimmedUrl.includes('127.0.0.1')) {
+      return [trimmedUrl, trimmedUrl.replace('127.0.0.1', 'localhost')];
+    }
+    return [trimmedUrl];
+  });
+
+  // 使用 Fastify 原生 CORS 插件
+  // 直接使用数组形式的 origin 配置，更简单可靠
+  // 开发环境下输出允许的 origin 列表以便调试
+  if (config.NODE_ENV !== 'production') {
+    logger.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
+  }
+
+  await app.register(fastifyCors, {
+    credentials: true,
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
+
   // 使用 Helmet 设置安全头（Fastify 插件）
+  // 注意：Helmet 应该在 CORS 之后注册，以避免覆盖 CORS 头
   await app.register(helmet, {
     global: true,
     permittedCrossDomainPolicies: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   });
 
   // 使用 Fastify 静态插件提供静态资源服务
@@ -58,13 +91,6 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
     prefix: '/assets/',
     decorateReply: false,
     dotfiles: 'deny',
-  });
-
-  // 启用 CORS，配置允许的来源和方法
-  app.enableCors({
-    credentials: true,
-    origin: config.ALLOW_CORS_URL.split(','),
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   });
 
   // 使用自定义日志记录器

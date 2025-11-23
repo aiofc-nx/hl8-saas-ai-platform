@@ -9,11 +9,13 @@
 ```env
 # 服务器配置
 HOST=localhost
-PORT=3000
+PORT=8000
 NODE_ENV=development
 
 # CORS 配置
-ALLOW_CORS_URL=http://localhost:3000
+# 允许的 CORS 来源 URL，多个 URL 用逗号分隔
+# 前端开发服务器默认端口通常是 5173（Vite）或 3000
+ALLOW_CORS_URL=http://localhost:5173,http://localhost:3000
 
 # JWT 配置
 ACCESS_TOKEN_SECRET=your-access-token-secret-min-10-chars
@@ -59,9 +61,9 @@ FRONTEND_URL=http://localhost:3000
 ### 环境变量说明
 
 - `HOST`: 服务器主机地址
-- `PORT`: 服务器端口号
+- `PORT`: 服务器端口号（默认：8000）
 - `NODE_ENV`: 运行环境（development/production/test/provision）
-- `ALLOW_CORS_URL`: 允许的 CORS 来源 URL
+- `ALLOW_CORS_URL`: 允许的 CORS 来源 URL，多个 URL 用逗号分隔（例如：`http://localhost:5173,http://localhost:3000`）。前端开发服务器默认端口通常是 5173（Vite）或 3000。**注意**：系统会自动处理 `localhost` 和 `127.0.0.1` 的映射，配置 `localhost` 时会自动允许 `127.0.0.1`，反之亦然。
 - `ACCESS_TOKEN_SECRET`: JWT 访问令牌密钥（最少 10 个字符）
 - `ACCESS_TOKEN_EXPIRATION`: 访问令牌过期时间（如：15m, 1h）
 - `REFRESH_TOKEN_SECRET`: JWT 刷新令牌密钥（最少 10 个字符）

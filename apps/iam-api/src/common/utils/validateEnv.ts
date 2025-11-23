@@ -1,3 +1,4 @@
+import type { MailConfig } from '@hl8/mail';
 import { Expose, Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -32,7 +33,7 @@ import {
  * })
  * ```
  */
-export class EnvConfig {
+export class EnvConfig implements MailConfig {
   /**
    * 索引签名，用于满足 ConfigRecord 类型要求。
    * @internal

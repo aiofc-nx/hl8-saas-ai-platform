@@ -65,27 +65,53 @@ const PREDEFINED_SERVICES = [
               host: config.MAIL_HOST,
               // 根据邮箱类型自动调整端口和加密设置
               // 如果环境变量已设置，使用环境变量的值；否则根据邮箱类型自动配置
+              // 重要：确保端口和 secure 设置匹配
+              // - 465 端口必须使用 secure: true (SSL)
+              // - 587 端口必须使用 secure: false + requireTLS: true (STARTTLS)
               port: config.MAIL_PORT
                 ? config.MAIL_PORT
                 : is163Mail || isQQMail
                   ? 465 // 163 和 QQ 邮箱推荐使用 465 端口（SSL）
                   : 587, // 其他邮箱默认使用 587 端口（STARTTLS）
-              secure:
-                config.MAIL_SECURE !== undefined
-                  ? config.MAIL_SECURE
+              // 根据端口自动设置 secure，确保配置匹配
+              // 如果端口已设置，根据端口自动判断 secure（忽略环境变量中的 secure，避免配置冲突）
+              // 如果端口未设置，使用环境变量或根据邮箱类型自动判断
+              secure: (() => {
+                const finalPort = config.MAIL_PORT
+                  ? config.MAIL_PORT
                   : is163Mail || isQQMail
-                    ? true // 163 和 QQ 邮箱推荐使用 SSL（465 端口）
-                    : false, // 其他邮箱默认使用 STARTTLS（587 端口）
+                    ? 465
+                    : 587;
+                // 如果端口是 465，必须使用 secure: true
+                if (finalPort === 465) {
+                  return true;
+                }
+                // 如果端口是 587，必须使用 secure: false
+                if (finalPort === 587) {
+                  return false;
+                }
+                // 其他端口，使用环境变量或默认值
+                return config.MAIL_SECURE !== undefined
+                  ? config.MAIL_SECURE
+                  : is163Mail || isQQMail;
+              })(),
               // 对于 587 端口（secure: false），需要明确启用 STARTTLS
-              requireTLS:
-                !(config.MAIL_SECURE !== undefined
-                  ? config.MAIL_SECURE
+              requireTLS: (() => {
+                const finalPort = config.MAIL_PORT
+                  ? config.MAIL_PORT
                   : is163Mail || isQQMail
-                    ? true
-                    : false) &&
-                (config.MAIL_PORT
-                  ? config.MAIL_PORT === 587
-                  : !is163Mail && !isQQMail),
+                    ? 465
+                    : 587;
+                const finalSecure = (() => {
+                  if (finalPort === 465) return true;
+                  if (finalPort === 587) return false;
+                  return config.MAIL_SECURE !== undefined
+                    ? config.MAIL_SECURE
+                    : is163Mail || isQQMail;
+                })();
+                // 只有在 secure: false 且端口是 587 时才启用 requireTLS
+                return !finalSecure && finalPort === 587;
+              })(),
               // 对于 587 端口，明确禁用立即 SSL 连接，使用 STARTTLS
               ignoreTLS: false,
               // 忽略证书验证错误（仅用于开发环境，生产环境应使用有效证书）
@@ -93,6 +119,8 @@ const PREDEFINED_SERVICES = [
                 rejectUnauthorized: false,
                 // 明确指定 TLS 版本，避免版本不匹配问题
                 minVersion: 'TLSv1.2',
+                // 对于 QQ 邮箱 587 端口，确保使用 STARTTLS 而不是直接 SSL
+                servername: config.MAIL_HOST,
               },
               auth: {
                 user: config.MAIL_USERNAME,
