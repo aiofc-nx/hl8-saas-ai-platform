@@ -1,16 +1,16 @@
 packages:
-  - apps/*
-  - libs/*
-  - libs/common/*
-  - libs/core/*
-  - libs/domains/*
-  - packages/*
+- apps/*
+- libs/*
+- libs/common/*
+- libs/modules/*
+- libs/core/*
+- packages/*
 onlyBuiltDependencies:
-  - '@nestjs/core'
-  - '@scarf/scarf'
-  - '@swc/core'
-  - '@tailwindcss/oxide'
-  - argon2
-  - esbuild
-  - nestjs-pino
-  - sharp
+- '@nestjs/core'
+- '@scarf/scarf'
+- '@swc/core'
+- '@tailwindcss/oxide'
+- argon2
+- esbuild
+- nestjs-pino
+- sharp

@@ -18,7 +18,10 @@
   "author": "HL8",
   "license": "ISC",
   "dependencies": {
-    "@hl8/domain-base": "workspace:*"
+    "@hl8/application-base": "workspace:*",
+    "@hl8/domain-base": "workspace:*",
+    "@nestjs/cqrs": "^11.0.3",
+    "@nestjs/common": "^11.1.9"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
