@@ -1,24 +1,19 @@
 export default {
-  displayName: '@hl8/exceptions',
   preset: 'ts-jest/presets/default-esm',
-  testEnvironment: 'node',
-  rootDir: '.',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    // 映射工作区依赖到源代码
-    '^@hl8/logger$': '<rootDir>/../../common/logger/src/index.ts',
-    '^@hl8/logger/(.*)$': '<rootDir>/../../common/logger/src/$1',
+    // Mock @hl8/exceptions 模块，使用 tests/__mocks__ 目录下的 mock 文件
+    '^@hl8/exceptions$': '<rootDir>/tests/__mocks__/exceptions.js',
   },
+  testEnvironment: 'node',
+  testMatch: ['**/*.spec.ts'],
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
       {
         useESM: true,
-        tsconfig: {
-          module: 'NodeNext',
-          moduleResolution: 'NodeNext',
-        },
+        tsconfig: './tsconfig.test.json',
         diagnostics: {
           warnOnly: true,
           ignoreCodes: [151002],
@@ -30,7 +25,6 @@ export default {
     'node_modules/(?!(@repo|@hl8|@nestjs|class-transformer|class-validator|reflect-metadata)/)',
   ],
   moduleFileExtensions: ['ts', 'js'],
-  coverageDirectory: '../../../coverage/libs/exceptions',
-  testMatch: ['**/*.spec.ts'],
+  coverageDirectory: '../../../coverage/libs/execution-context',
   passWithNoTests: true,
 };
