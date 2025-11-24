@@ -4,11 +4,13 @@ import { EntityBase } from '../entities/entity.base.js';
 import type { DomainEventBase } from '../events/domain-event.base.js';
 import { DomainException } from '../exceptions/domain.exception.js';
 import { assertDefined } from '../utils/domain-guards.js';
-import { DepartmentId } from '../value-objects/department-id.vo.js';
-import { OrganizationId } from '../value-objects/organization-id.vo.js';
-import { TenantId } from '../value-objects/tenant-id.vo.js';
-import { UserId } from '../value-objects/user-id.vo.js';
-import { AggregateId } from './aggregate-id.value-object.js';
+import {
+  AggregateId,
+  DepartmentId,
+  OrganizationId,
+  TenantId,
+  UserId,
+} from '../value-objects/ids/index.js';
 
 /**
  * @public

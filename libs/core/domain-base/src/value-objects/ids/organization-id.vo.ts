@@ -1,5 +1,5 @@
-import { assertNonEmptyString } from '../utils/domain-guards.js';
-import { ValueObjectBase } from './value-object.base.js';
+import { assertNonEmptyString } from '../../utils/domain-guards.js';
+import { ValueObjectBase } from '../value-object.base.js';
 
 interface IdentifierProps {
   readonly value: string;

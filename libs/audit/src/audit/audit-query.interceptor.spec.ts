@@ -1,4 +1,4 @@
-import type { ExecutionContext as CommonExecutionContext } from '@hl8/common';
+import type { ExecutionContext as CommonExecutionContext } from '@hl8/application-base';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { CallHandler, ExecutionContext } from '@nestjs/common';
 import { lastValueFrom, of } from 'rxjs';

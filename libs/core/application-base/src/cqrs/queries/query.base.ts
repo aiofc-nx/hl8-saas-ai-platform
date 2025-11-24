@@ -1,4 +1,4 @@
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '../../execution-context/execution-context';
 
 /**
  * @public

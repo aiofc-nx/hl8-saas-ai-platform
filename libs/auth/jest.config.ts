@@ -10,9 +10,9 @@ export default {
       '<rootDir>/tests/__mocks__/interfaces/auth-config.interface.js',
     // 映射工作区依赖
     '^@hl8/application-base$':
-      '<rootDir>/../../core/application-base/src/index.ts',
+      '<rootDir>/../../libs/core/application-base/src/index.ts',
     '^@hl8/application-base/(.*)$':
-      '<rootDir>/../../core/application-base/src/$1',
+      '<rootDir>/../../libs/core/application-base/src/$1',
     '^@hl8/domain-base$': '<rootDir>/../../core/domain-base/src/index.ts',
     '^@hl8/domain-base/(.*)$': '<rootDir>/../../core/domain-base/src/$1',
   },

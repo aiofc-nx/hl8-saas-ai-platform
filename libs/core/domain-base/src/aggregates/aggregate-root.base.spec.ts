@@ -1,6 +1,5 @@
 import { jest } from '@jest/globals';
 
-import { AggregateId } from '../../src/aggregates/aggregate-id.value-object.js';
 import type { AggregateRootProps } from '../../src/aggregates/aggregate-root.base.js';
 import { AggregateRootBase } from '../../src/aggregates/aggregate-root.base.js';
 import { AuditTrail } from '../../src/auditing/audit-trail.value-object.js';
@@ -8,10 +7,13 @@ import { SoftDeleteStatus } from '../../src/auditing/soft-delete-status.value-ob
 import { DomainEventBase } from '../../src/events/domain-event.base.js';
 import { DomainException } from '../../src/exceptions/domain.exception.js';
 import { UuidGenerator } from '../../src/utils/uuid-generator.js';
-import { DepartmentId } from '../../src/value-objects/department-id.vo.js';
-import { OrganizationId } from '../../src/value-objects/organization-id.vo.js';
-import { TenantId } from '../../src/value-objects/tenant-id.vo.js';
-import { UserId } from '../../src/value-objects/user-id.vo.js';
+import {
+  AggregateId,
+  DepartmentId,
+  OrganizationId,
+  TenantId,
+  UserId,
+} from '../../src/value-objects/ids/index.js';
 import { DateTimeValueObject } from '../value-objects/date-time.vo.js';
 
 interface TestAggregateProps extends AggregateRootProps<AggregateId> {

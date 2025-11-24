@@ -2,10 +2,12 @@ import { AuditTrail } from '../auditing/audit-trail.value-object.js';
 import { SoftDeleteStatus } from '../auditing/soft-delete-status.value-object.js';
 import { assertNonEmptyString, assertUuid } from '../utils/domain-guards.js';
 import { DateTimeValueObject } from '../value-objects/date-time.vo.js';
-import { DepartmentId } from '../value-objects/department-id.vo.js';
-import { OrganizationId } from '../value-objects/organization-id.vo.js';
-import { TenantId } from '../value-objects/tenant-id.vo.js';
-import { UserId } from '../value-objects/user-id.vo.js';
+import {
+  DepartmentId,
+  OrganizationId,
+  TenantId,
+  UserId,
+} from '../value-objects/ids/index.js';
 
 /**
  * @public

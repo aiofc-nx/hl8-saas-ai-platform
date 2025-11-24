@@ -1,5 +1,5 @@
 import type { PureAbility } from '@casl/ability';
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '@hl8/application-base';
 
 /**
  * @public

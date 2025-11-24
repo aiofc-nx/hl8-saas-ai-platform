@@ -1,6 +1,6 @@
-import { assertUuid } from '../utils/domain-guards.js';
-import { UuidGenerator } from '../utils/uuid-generator.js';
-import { ValueObjectBase } from '../value-objects/value-object.base.js';
+import { assertUuid } from '../../utils/domain-guards.js';
+import { UuidGenerator } from '../../utils/uuid-generator.js';
+import { ValueObjectBase } from '../value-object.base.js';
 
 interface AggregateIdProps {
   readonly value: string;

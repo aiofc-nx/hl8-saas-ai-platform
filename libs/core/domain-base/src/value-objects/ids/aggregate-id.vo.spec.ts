@@ -1,8 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { DomainException } from '../exceptions/domain.exception.js';
-import { UuidGenerator } from '../utils/uuid-generator.js';
-import { AggregateId } from './aggregate-id.value-object.js';
+import { DomainException } from '../../exceptions/domain.exception.js';
+import { UuidGenerator } from '../../utils/uuid-generator.js';
+import { AggregateId } from './aggregate-id.vo.js';
 
 describe('AggregateId', () => {
   describe('generate', () => {

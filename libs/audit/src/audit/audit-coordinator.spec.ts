@@ -28,7 +28,7 @@ jest.mock('@hl8/exceptions', () => {
   };
 });
 
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '@hl8/application-base';
 import { MissingConfigurationForFeatureException } from '@hl8/exceptions';
 import { of, throwError } from 'rxjs';
 import type {

@@ -1,7 +1,7 @@
 import {
   assertExecutionContext,
   type ExecutionContext as AuthExecutionContext,
-} from '@hl8/common';
+} from '@hl8/application-base';
 import { GeneralBadRequestException } from '@hl8/exceptions';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';

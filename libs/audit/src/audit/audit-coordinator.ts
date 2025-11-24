@@ -1,4 +1,4 @@
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '@hl8/application-base';
 import { MissingConfigurationForFeatureException } from '@hl8/exceptions';
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { firstValueFrom, isObservable } from 'rxjs';

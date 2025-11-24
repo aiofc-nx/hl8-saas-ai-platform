@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { AggregateId } from '../aggregates/aggregate-id.value-object.js';
 import { DomainException } from '../exceptions/domain.exception.js';
+import { AggregateId } from '../value-objects/ids/aggregate-id.vo.js';
 import { EntityBase } from './entity.base.js';
 
 class TestEntity extends EntityBase<AggregateId> {

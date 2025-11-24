@@ -27,7 +27,7 @@ pnpm add @hl8/audit
 ```typescript
 import { Injectable } from '@nestjs/common';
 import { AuditService, AuditRecord } from '@hl8/audit';
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '@hl8/application-base';
 
 @Injectable()
 export class IamAuditService implements AuditService {

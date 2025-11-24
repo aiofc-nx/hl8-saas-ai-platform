@@ -25,7 +25,7 @@
  * ```
  */
 
-import type { ExecutionContext as AuthExecutionContext } from '@hl8/common';
+import type { ExecutionContext as AuthExecutionContext } from '@hl8/application-base';
 import { GeneralBadRequestException } from '@hl8/exceptions';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 

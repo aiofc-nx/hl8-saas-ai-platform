@@ -1,4 +1,4 @@
-import type { ExecutionContext as CommonExecutionContext } from '@hl8/common';
+import type { ExecutionContext as CommonExecutionContext } from '@hl8/application-base';
 import {
   CallHandler,
   ExecutionContext,

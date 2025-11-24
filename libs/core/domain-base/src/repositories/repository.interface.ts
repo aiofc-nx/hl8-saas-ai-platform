@@ -1,8 +1,10 @@
-import type { AggregateId } from '../aggregates/aggregate-id.value-object.js';
 import type { AggregateRootBase } from '../aggregates/aggregate-root.base.js';
-import type { DepartmentId } from '../value-objects/department-id.vo.js';
-import type { OrganizationId } from '../value-objects/organization-id.vo.js';
-import type { TenantId } from '../value-objects/tenant-id.vo.js';
+import type {
+  AggregateId,
+  DepartmentId,
+  OrganizationId,
+  TenantId,
+} from '../value-objects/ids/index.js';
 
 /**
  * @public

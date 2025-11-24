@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { DomainException } from '../exceptions/domain.exception.js';
+import { DomainException } from '../../exceptions/domain.exception.js';
 import { TenantId } from './tenant-id.vo.js';
 
 describe('TenantId', () => {

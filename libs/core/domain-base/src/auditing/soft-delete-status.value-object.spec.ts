@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { DateTimeValueObject } from '../value-objects/date-time.vo.js';
-import { UserId } from '../value-objects/user-id.vo.js';
+import { UserId } from '../value-objects/ids/user-id.vo.js';
 import { SoftDeleteStatus } from './soft-delete-status.value-object.js';
 
 describe('SoftDeleteStatus', () => {

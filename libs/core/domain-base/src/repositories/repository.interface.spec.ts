@@ -1,11 +1,13 @@
-import { AggregateId } from '../aggregates/aggregate-id.value-object.js';
 import { AggregateRootBase } from '../aggregates/aggregate-root.base.js';
 import { AuditTrail } from '../auditing/audit-trail.value-object.js';
 import { SoftDeleteStatus } from '../auditing/soft-delete-status.value-object.js';
-import { DepartmentId } from '../value-objects/department-id.vo.js';
-import { OrganizationId } from '../value-objects/organization-id.vo.js';
-import { TenantId } from '../value-objects/tenant-id.vo.js';
-import { UserId } from '../value-objects/user-id.vo.js';
+import {
+  AggregateId,
+  DepartmentId,
+  OrganizationId,
+  TenantId,
+  UserId,
+} from '../value-objects/ids/index.js';
 import type {
   Repository,
   RepositoryFindByCriteria,

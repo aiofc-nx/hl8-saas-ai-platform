@@ -1,5 +1,5 @@
-import { AggregateId } from '../aggregates/aggregate-id.value-object.js';
 import { assertDefined } from '../utils/domain-guards.js';
+import { AggregateId } from '../value-objects/ids/aggregate-id.vo.js';
 
 /**
  * @public

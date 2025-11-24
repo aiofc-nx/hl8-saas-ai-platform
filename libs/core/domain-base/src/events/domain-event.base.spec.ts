@@ -3,10 +3,12 @@ import { SoftDeleteStatus } from '../auditing/soft-delete-status.value-object.js
 import { DomainException } from '../exceptions/domain.exception.js';
 import { UuidGenerator } from '../utils/uuid-generator.js';
 import { DateTimeValueObject } from '../value-objects/date-time.vo.js';
-import { DepartmentId } from '../value-objects/department-id.vo.js';
-import { OrganizationId } from '../value-objects/organization-id.vo.js';
-import { TenantId } from '../value-objects/tenant-id.vo.js';
-import { UserId } from '../value-objects/user-id.vo.js';
+import {
+  DepartmentId,
+  OrganizationId,
+  TenantId,
+  UserId,
+} from '../value-objects/ids/index.js';
 import { DomainEventBase } from './domain-event.base.js';
 
 class SampleDomainEvent extends DomainEventBase {

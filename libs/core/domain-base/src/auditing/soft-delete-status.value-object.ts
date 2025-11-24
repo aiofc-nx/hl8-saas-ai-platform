@@ -1,5 +1,5 @@
 import { DateTimeValueObject } from '../value-objects/date-time.vo.js';
-import { UserId } from '../value-objects/user-id.vo.js';
+import { UserId } from '../value-objects/ids/user-id.vo.js';
 import { ValueObjectBase } from '../value-objects/value-object.base.js';
 
 interface SoftDeleteProps {

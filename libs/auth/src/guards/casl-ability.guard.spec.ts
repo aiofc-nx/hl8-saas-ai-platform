@@ -1,4 +1,4 @@
-import type { ExecutionContext as AuthExecutionContext } from '@hl8/common';
+import type { ExecutionContext as AuthExecutionContext } from '@hl8/application-base';
 import { GeneralBadRequestException } from '@hl8/exceptions';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { ArgumentsHost, ExecutionContext, Type } from '@nestjs/common';

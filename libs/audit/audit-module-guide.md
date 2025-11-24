@@ -242,7 +242,7 @@ pnpm add @hl8/audit
 ```typescript
 import { Injectable } from '@nestjs/common';
 import { AuditService, AuditRecord } from '@hl8/audit';
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '@hl8/application-base';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { AuditLog } from './entities/audit-log.entity';
@@ -353,7 +353,7 @@ export class AppModule {}
 
 ```typescript
 import { CommandBase } from '@hl8/application-base';
-import type { ExecutionContext } from '@hl8/common';
+import type { ExecutionContext } from '@hl8/application-base';
 
 /**
  * 创建用户命令
@@ -1321,7 +1321,7 @@ export class AuditAnalysisService {
 
 - [@hl8/audit README](../libs/audit/README.md)
 - [应用层设计规范](../libs/core/application-base/application-layer-guide.md)
-- [ExecutionContext 文档](../libs/common/execution-context/README.md)
+- [ExecutionContext 文档](../../core/application-base/README.md#组件说明)
 
 ---
 

@@ -1,6 +1,6 @@
-import type { ExecutionContext } from '@hl8/common';
 import { GeneralForbiddenException } from '@hl8/exceptions';
 import { Injectable } from '@nestjs/common';
+import type { ExecutionContext } from '../../execution-context/execution-context';
 import type { CommandBase } from './command.base.js';
 
 /**
