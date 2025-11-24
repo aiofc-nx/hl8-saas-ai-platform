@@ -1,4 +1,4 @@
-import { CaslCommandHandler } from '@hl8/application-base';
+import { CommandHandler } from '@hl8/application-base';
 import { AggregateId, TenantId } from '@hl8/domain-base';
 import { Injectable } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
@@ -12,19 +12,15 @@ import { ChangePasswordCommand } from './change-password.command.js';
  * @description 修改密码命令处理器。
  */
 @Injectable()
-export class ChangePasswordHandler extends CaslCommandHandler<
+export class ChangePasswordHandler extends CommandHandler<
   ChangePasswordCommand,
   void
 > {
   public constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly abilityCoordinator: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly auditCoordinator: any,
     private readonly userRepository: UserRepository,
     private readonly eventBus: EventBus,
   ) {
-    super(abilityCoordinator, auditCoordinator);
+    super();
   }
 
   /**
@@ -43,7 +39,7 @@ export class ChangePasswordHandler extends CaslCommandHandler<
     }
 
     // 校验租户范围
-    this.assertTenantScope(command, user.tenantId.toString());
+    this.assertTenantScope(command.context, user.tenantId.toString());
 
     // 修改密码
     user.changePassword(

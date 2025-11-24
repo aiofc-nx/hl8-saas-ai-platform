@@ -1,8 +1,4 @@
-import {
-  AbilityDescriptor,
-  CaslCommandBase,
-  SecurityContext,
-} from '@hl8/application-base';
+import { CommandBase, ExecutionContext } from '@hl8/application-base';
 import { UserDTO } from '../../../dtos/user.dto.js';
 
 /**
@@ -20,26 +16,12 @@ export interface ActivateUserResult {
  * @public
  * @description 激活用户命令。
  */
-export class ActivateUserCommand extends CaslCommandBase<ActivateUserResult> {
+export class ActivateUserCommand extends CommandBase<ActivateUserResult> {
   public constructor(
-    context: SecurityContext,
+    context: ExecutionContext,
     public readonly userId: string,
   ) {
     super(context);
-  }
-
-  /**
-   * @description 返回执行当前命令所需的权限描述。
-   */
-  public abilityDescriptor(): AbilityDescriptor {
-    return {
-      action: 'update',
-      subject: 'User',
-      conditions: {
-        tenantId: this.context.tenantId,
-        userId: this.userId,
-      },
-    };
   }
 
   /**

@@ -1,14 +1,9 @@
-import { PureAbility } from '@casl/ability';
-import type {
-  AbilityService,
-  AuditService,
-  SecurityContext,
-} from '@hl8/application-base';
+import type { ExecutionContext } from '@hl8/application-base';
 import {
-  AuditCoordinator,
-  CaslAbilityCoordinator,
-} from '@hl8/application-base';
-import { AggregateId, TenantId } from '@hl8/domain-base';
+  AggregateId,
+  RepositoryFindByCriteria,
+  TenantId,
+} from '@hl8/domain-base';
 import { describe, expect, it, jest } from '@jest/globals';
 import { EventBus } from '@nestjs/cqrs';
 import { User } from '../../../../domain/aggregates/user.aggregate.js';
@@ -22,35 +17,6 @@ import {
 } from '../../../../domain/value-objects/index.js';
 import { CreateUserCommand } from './create-user.command.js';
 import { CreateUserHandler } from './create-user.handler.js';
-
-class StubAbilityService implements AbilityService {
-  public constructor(private readonly allow: boolean = true) {}
-
-  public async resolveAbility(): Promise<
-    PureAbility<[string, string], Record<string, unknown>>
-  > {
-    if (this.allow) {
-      return new PureAbility<[string, string], Record<string, unknown>>([
-        { action: 'create', subject: 'User' },
-      ]);
-    }
-    return new PureAbility<[string, string], Record<string, unknown>>([]);
-  }
-}
-
-class InMemoryAuditService implements AuditService {
-  public records: Array<{
-    action: string;
-    payload?: Record<string, unknown>;
-  }> = [];
-
-  public async append(
-    _context: SecurityContext,
-    record: { action: string; payload?: Record<string, unknown> },
-  ): Promise<void> {
-    this.records.push(record);
-  }
-}
 
 class MockUserRepository implements UserRepository {
   private users: Map<string, User> = new Map();
@@ -105,12 +71,27 @@ class MockUserRepository implements UserRepository {
     this.users.delete(id.toString());
   }
 
+  public async findBy(
+    criteria: RepositoryFindByCriteria<AggregateId>,
+  ): Promise<User[]> {
+    const results: User[] = [];
+    for (const user of this.users.values()) {
+      if (user.tenantId.equals(criteria.tenantId)) {
+        if (criteria.ids && !criteria.ids.some((id) => id.equals(user.id))) {
+          continue;
+        }
+        results.push(user);
+      }
+    }
+    return results;
+  }
+
   public clear(): void {
     this.users.clear();
   }
 }
 
-const securityContext: SecurityContext = {
+const executionContext: ExecutionContext = {
   tenantId: 'tenant-1',
   userId: 'user-1',
 };
@@ -119,31 +100,18 @@ describe('CreateUserHandler', () => {
   let handler: CreateUserHandler;
   let userRepository: MockUserRepository;
   let eventBus: EventBus;
-  let abilityCoordinator: CaslAbilityCoordinator;
-  let auditCoordinator: AuditCoordinator;
 
   beforeEach(() => {
     userRepository = new MockUserRepository();
     eventBus = {
       publishAll: jest.fn<() => Promise<void>>(),
     } as unknown as EventBus;
-    abilityCoordinator = new CaslAbilityCoordinator(
-      new StubAbilityService(true),
-    );
-    auditCoordinator = new AuditCoordinator(
-      new InMemoryAuditService() as unknown as AuditService,
-    );
-    handler = new CreateUserHandler(
-      abilityCoordinator,
-      auditCoordinator,
-      userRepository,
-      eventBus,
-    );
+    handler = new CreateUserHandler(userRepository, eventBus);
   });
 
   it('应创建新用户', async () => {
     const command = new CreateUserCommand(
-      securityContext,
+      executionContext,
       'user@example.com',
       'john_doe',
       '$2b$10$hash',
@@ -176,7 +144,7 @@ describe('CreateUserHandler', () => {
     await userRepository.save(existingUser);
 
     const command = new CreateUserCommand(
-      securityContext,
+      executionContext,
       'user@example.com',
       'john_doe',
       '$2b$10$hash',
@@ -202,7 +170,7 @@ describe('CreateUserHandler', () => {
     await userRepository.save(existingUser);
 
     const command = new CreateUserCommand(
-      securityContext,
+      executionContext,
       'user@example.com',
       'john_doe',
       '$2b$10$hash',

@@ -1,8 +1,4 @@
-import {
-  AbilityDescriptor,
-  CaslCommandBase,
-  SecurityContext,
-} from '@hl8/application-base';
+import { CommandBase, ExecutionContext } from '@hl8/application-base';
 import { UpdateProfileDTO } from '../../../dtos/update-profile.dto.js';
 import { UserDTO } from '../../../dtos/user.dto.js';
 
@@ -21,27 +17,13 @@ export interface UpdateProfileResult {
  * @public
  * @description 更新用户资料命令。
  */
-export class UpdateProfileCommand extends CaslCommandBase<UpdateProfileResult> {
+export class UpdateProfileCommand extends CommandBase<UpdateProfileResult> {
   public constructor(
-    context: SecurityContext,
+    context: ExecutionContext,
     public readonly userId: string,
     public readonly profileUpdates: UpdateProfileDTO,
   ) {
     super(context);
-  }
-
-  /**
-   * @description 返回执行当前命令所需的权限描述。
-   */
-  public abilityDescriptor(): AbilityDescriptor {
-    return {
-      action: 'update',
-      subject: 'User',
-      conditions: {
-        tenantId: this.context.tenantId,
-        userId: this.userId,
-      },
-    };
   }
 
   /**

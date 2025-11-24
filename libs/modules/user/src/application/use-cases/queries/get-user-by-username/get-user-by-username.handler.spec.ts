@@ -4,7 +4,7 @@ import {
   RepositoryFindByCriteria,
   TenantId,
 } from '@hl8/domain-base';
-import { describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import { User } from '../../../../domain/aggregates/user.aggregate.js';
 import type { UserRepository } from '../../../../domain/repositories/user.repository.js';
 import {
@@ -13,21 +13,29 @@ import {
   UserProfile,
   Username,
 } from '../../../../domain/value-objects/index.js';
-import { GetUserByIdHandler } from './get-user-by-id.handler.js';
-import { GetUserByIdQuery } from './get-user-by-id.query.js';
+import { GetUserByUsernameHandler } from './get-user-by-username.handler.js';
+import { GetUserByUsernameQuery } from './get-user-by-username.query.js';
 
 class MockUserRepository implements UserRepository {
   private users: Map<string, User> = new Map();
 
-  public async findById(id: AggregateId): Promise<User | null> {
-    return this.users.get(id.toString()) ?? null;
+  public async findById(): Promise<User | null> {
+    return null;
   }
 
   public async findByEmail(): Promise<User | null> {
     return null;
   }
 
-  public async findByUsername(): Promise<User | null> {
+  public async findByUsername(
+    username: Username,
+    tenantId: TenantId,
+  ): Promise<User | null> {
+    for (const user of this.users.values()) {
+      if (user.username.equals(username) && user.tenantId.equals(tenantId)) {
+        return user;
+      }
+    }
     return null;
   }
 
@@ -43,8 +51,8 @@ class MockUserRepository implements UserRepository {
     this.users.set(user.id.toString(), user);
   }
 
-  public async delete(id: AggregateId): Promise<void> {
-    this.users.delete(id.toString());
+  public async delete(): Promise<void> {
+    // no-op
   }
 
   public async findBy(
@@ -72,16 +80,16 @@ const executionContext: ExecutionContext = {
   userId: 'user-1',
 };
 
-describe('GetUserByIdHandler', () => {
-  let handler: GetUserByIdHandler;
+describe('GetUserByUsernameHandler', () => {
+  let handler: GetUserByUsernameHandler;
   let userRepository: MockUserRepository;
 
   beforeEach(() => {
     userRepository = new MockUserRepository();
-    handler = new GetUserByIdHandler(userRepository);
+    handler = new GetUserByUsernameHandler(userRepository);
   });
 
-  it('应根据ID查询用户', async () => {
+  it('应根据用户名查询用户', async () => {
     const user = User.create({
       tenantId: TenantId.create('tenant-1'),
       email: Email.create('user@example.com'),
@@ -91,18 +99,17 @@ describe('GetUserByIdHandler', () => {
     });
     userRepository.setUser(user);
 
-    const query = new GetUserByIdQuery(executionContext, user.id.toString());
+    const query = new GetUserByUsernameQuery(executionContext, 'john_doe');
     const result = await handler.execute(query);
 
     expect(result).toBeDefined();
-    expect(result?.id).toBe(user.id.toString());
-    expect(result?.email).toBe('user@example.com');
+    expect(result?.username).toBe('john_doe');
   });
 
   it('应在用户不存在时返回 null', async () => {
-    const query = new GetUserByIdQuery(
+    const query = new GetUserByUsernameQuery(
       executionContext,
-      AggregateId.generate().toString(),
+      'nonexistent_user',
     );
     const result = await handler.execute(query);
 

@@ -1,17 +1,17 @@
 import { DateTimeValueObject, TenantId } from '@hl8/domain-base';
-import { describe, expect, it } from '@jest/globals';
-import { UserCreatedEvent } from '../../../../domain/domain-events/user-created.event.js';
-import { UserCreatedHandler } from './user-created.handler.js';
+import { beforeEach, describe, expect, it } from '@jest/globals';
+import { UserUnlockedEvent } from '../../../../domain/domain-events/user-unlocked.event.js';
+import { UserUnlockedHandler } from './user-unlocked.handler.js';
 
-describe('UserCreatedHandler', () => {
-  let handler: UserCreatedHandler;
+describe('UserUnlockedHandler', () => {
+  let handler: UserUnlockedHandler;
 
   beforeEach(() => {
-    handler = new UserCreatedHandler();
+    handler = new UserUnlockedHandler();
   });
 
-  it('应处理用户创建事件', async () => {
-    const event = new UserCreatedEvent({
+  it('应处理用户解锁事件', async () => {
+    const event = new UserUnlockedEvent({
       eventId: '550e8400-e29b-41d4-a716-446655440000',
       occurredAt: DateTimeValueObject.now(),
       aggregateId: '550e8400-e29b-41d4-a716-446655440001',
@@ -21,8 +21,6 @@ describe('UserCreatedHandler', () => {
       softDeleteStatus: {} as any,
       payload: {
         userId: 'user-1',
-        email: 'user@example.com',
-        username: 'john_doe',
       },
     });
 

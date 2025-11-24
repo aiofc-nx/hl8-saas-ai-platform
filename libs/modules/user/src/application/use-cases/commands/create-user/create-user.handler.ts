@@ -1,4 +1,4 @@
-import { CaslCommandHandler } from '@hl8/application-base';
+import { CommandHandler } from '@hl8/application-base';
 import { TenantId } from '@hl8/domain-base';
 import { Injectable } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
@@ -19,19 +19,15 @@ import { CreateUserCommand, CreateUserResult } from './create-user.command.js';
  * @description 创建用户命令处理器。
  */
 @Injectable()
-export class CreateUserHandler extends CaslCommandHandler<
+export class CreateUserHandler extends CommandHandler<
   CreateUserCommand,
   CreateUserResult
 > {
   public constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly abilityCoordinator: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly auditCoordinator: any,
     private readonly userRepository: UserRepository,
     private readonly eventBus: EventBus,
   ) {
-    super(abilityCoordinator, auditCoordinator);
+    super();
   }
 
   /**

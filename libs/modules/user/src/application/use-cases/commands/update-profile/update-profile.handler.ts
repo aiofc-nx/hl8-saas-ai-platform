@@ -1,5 +1,5 @@
-import { CaslCommandHandler } from '@hl8/application-base';
-import { AggregateId, DateTimeValueObject, TenantId } from '@hl8/domain-base';
+import { CommandHandler } from '@hl8/application-base';
+import { AggregateId, DateTimeValueObject } from '@hl8/domain-base';
 import { Injectable } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { User } from '../../../../domain/aggregates/user.aggregate.js';
@@ -16,19 +16,15 @@ import {
  * @description 更新用户资料命令处理器。
  */
 @Injectable()
-export class UpdateProfileHandler extends CaslCommandHandler<
+export class UpdateProfileHandler extends CommandHandler<
   UpdateProfileCommand,
   UpdateProfileResult
 > {
   public constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly abilityCoordinator: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly auditCoordinator: any,
     private readonly userRepository: UserRepository,
     private readonly eventBus: EventBus,
   ) {
-    super(abilityCoordinator, auditCoordinator);
+    super();
   }
 
   /**
@@ -41,7 +37,6 @@ export class UpdateProfileHandler extends CaslCommandHandler<
     command: UpdateProfileCommand,
   ): Promise<UpdateProfileResult> {
     const userId = AggregateId.fromString(command.userId);
-    const tenantId = TenantId.create(command.context.tenantId);
 
     // 查找用户
     const user = await this.userRepository.findById(userId);
@@ -50,7 +45,7 @@ export class UpdateProfileHandler extends CaslCommandHandler<
     }
 
     // 校验租户范围
-    this.assertTenantScope(command, user.tenantId.toString());
+    this.assertTenantScope(command.context, user.tenantId.toString());
 
     // 准备更新数据
     const updates: {

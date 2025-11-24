@@ -4,8 +4,10 @@ import {
   RepositoryFindByCriteria,
   TenantId,
 } from '@hl8/domain-base';
-import { describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { EventBus } from '@nestjs/cqrs';
 import { User } from '../../../../domain/aggregates/user.aggregate.js';
+import { UserNotFoundException } from '../../../../domain/exceptions/user-domain.exception.js';
 import type { UserRepository } from '../../../../domain/repositories/user.repository.js';
 import {
   Email,
@@ -13,8 +15,8 @@ import {
   UserProfile,
   Username,
 } from '../../../../domain/value-objects/index.js';
-import { GetUserByIdHandler } from './get-user-by-id.handler.js';
-import { GetUserByIdQuery } from './get-user-by-id.query.js';
+import { RecordLoginCommand } from './record-login.command.js';
+import { RecordLoginHandler } from './record-login.handler.js';
 
 class MockUserRepository implements UserRepository {
   private users: Map<string, User> = new Map();
@@ -72,16 +74,20 @@ const executionContext: ExecutionContext = {
   userId: 'user-1',
 };
 
-describe('GetUserByIdHandler', () => {
-  let handler: GetUserByIdHandler;
+describe('RecordLoginHandler', () => {
+  let handler: RecordLoginHandler;
   let userRepository: MockUserRepository;
+  let eventBus: EventBus;
 
   beforeEach(() => {
     userRepository = new MockUserRepository();
-    handler = new GetUserByIdHandler(userRepository);
+    eventBus = {
+      publishAll: jest.fn<() => Promise<void>>(),
+    } as unknown as EventBus;
+    handler = new RecordLoginHandler(userRepository, eventBus);
   });
 
-  it('应根据ID查询用户', async () => {
+  it('应记录用户登录', async () => {
     const user = User.create({
       tenantId: TenantId.create('tenant-1'),
       email: Email.create('user@example.com'),
@@ -91,21 +97,26 @@ describe('GetUserByIdHandler', () => {
     });
     userRepository.setUser(user);
 
-    const query = new GetUserByIdQuery(executionContext, user.id.toString());
-    const result = await handler.execute(query);
+    const command = new RecordLoginCommand(
+      executionContext,
+      user.id.toString(),
+    );
+    await handler.execute(command);
 
-    expect(result).toBeDefined();
-    expect(result?.id).toBe(user.id.toString());
-    expect(result?.email).toBe('user@example.com');
+    const updatedUser = await userRepository.findById(user.id);
+    expect(updatedUser).toBeDefined();
+    expect(updatedUser?.lastLoginAt).toBeDefined();
+    expect(eventBus.publishAll).toHaveBeenCalled();
   });
 
-  it('应在用户不存在时返回 null', async () => {
-    const query = new GetUserByIdQuery(
+  it('应在用户不存在时抛出异常', async () => {
+    const command = new RecordLoginCommand(
       executionContext,
       AggregateId.generate().toString(),
     );
-    const result = await handler.execute(query);
 
-    expect(result).toBeNull();
+    await expect(handler.execute(command)).rejects.toThrow(
+      UserNotFoundException,
+    );
   });
 });

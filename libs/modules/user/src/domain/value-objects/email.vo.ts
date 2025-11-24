@@ -42,6 +42,12 @@ export class Email extends ValueObjectBase<EmailProps> {
       throw new DomainException('邮箱格式不合法');
     }
 
+    // 要求必须有顶级域名（至少包含一个点）
+    const parts = trimmed.split('@');
+    if (parts.length !== 2 || !parts[1].includes('.')) {
+      throw new DomainException('邮箱格式不合法');
+    }
+
     if (trimmed.length > 255) {
       throw new DomainException('邮箱地址长度不能超过255个字符');
     }

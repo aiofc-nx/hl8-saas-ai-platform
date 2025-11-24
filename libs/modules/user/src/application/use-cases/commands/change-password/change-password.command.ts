@@ -1,34 +1,16 @@
-import {
-  AbilityDescriptor,
-  CaslCommandBase,
-  SecurityContext,
-} from '@hl8/application-base';
+import { CommandBase, ExecutionContext } from '@hl8/application-base';
 
 /**
  * @public
  * @description 修改密码命令。
  */
-export class ChangePasswordCommand extends CaslCommandBase<void> {
+export class ChangePasswordCommand extends CommandBase<void> {
   public constructor(
-    context: SecurityContext,
+    context: ExecutionContext,
     public readonly userId: string,
     public readonly newPasswordHash: string,
   ) {
     super(context);
-  }
-
-  /**
-   * @description 返回执行当前命令所需的权限描述。
-   */
-  public abilityDescriptor(): AbilityDescriptor {
-    return {
-      action: 'update',
-      subject: 'User',
-      conditions: {
-        tenantId: this.context.tenantId,
-        userId: this.userId,
-      },
-    };
   }
 
   /**

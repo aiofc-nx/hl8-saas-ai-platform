@@ -1,4 +1,4 @@
-import { CaslQueryHandler } from '@hl8/application-base';
+import { QueryHandler } from '@hl8/application-base';
 import { TenantId } from '@hl8/domain-base';
 import { Injectable } from '@nestjs/common';
 import { User } from '../../../../domain/aggregates/user.aggregate.js';
@@ -12,18 +12,12 @@ import { GetUserByUsernameQuery } from './get-user-by-username.query.js';
  * @description 根据用户名查询用户查询处理器。
  */
 @Injectable()
-export class GetUserByUsernameHandler extends CaslQueryHandler<
+export class GetUserByUsernameHandler extends QueryHandler<
   GetUserByUsernameQuery,
   UserDTO | null
 > {
-  public constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly abilityCoordinator: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly auditCoordinator: any,
-    private readonly userRepository: UserRepository,
-  ) {
-    super(abilityCoordinator, auditCoordinator);
+  public constructor(private readonly userRepository: UserRepository) {
+    super();
   }
 
   /**
@@ -44,7 +38,7 @@ export class GetUserByUsernameHandler extends CaslQueryHandler<
     }
 
     // 校验租户范围
-    this.assertTenantScope(query, user.tenantId.toString());
+    this.assertTenantScope(query.context, user.tenantId.toString());
 
     // 转换为 DTO
     return this.toDTO(user);

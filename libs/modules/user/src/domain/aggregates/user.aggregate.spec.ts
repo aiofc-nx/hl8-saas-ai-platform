@@ -106,6 +106,9 @@ describe('User', () => {
         profile,
       });
 
+      // 清除 User.create 发布的事件
+      user.pullDomainEvents();
+
       user.activate();
 
       expect(user.status.isActive()).toBe(true);
@@ -365,9 +368,10 @@ describe('User', () => {
       });
 
       const token = 'reset-token-123';
-      const expiresAt = DateTimeValueObject.fromISOString(
-        '2024-12-31T23:59:59.000Z',
-      );
+      // 使用未来的时间，确保令牌未过期
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+      const expiresAt = DateTimeValueObject.fromJSDate(futureDate);
       user.requestPasswordReset(token, expiresAt);
 
       const newPasswordHash = PasswordHash.create('$2b$10$newhash');
@@ -407,9 +411,10 @@ describe('User', () => {
       });
 
       const token = 'reset-token-123';
-      const expiresAt = DateTimeValueObject.fromISOString(
-        '2024-12-31T23:59:59.000Z',
-      );
+      // 使用未来的时间，确保令牌未过期
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+      const expiresAt = DateTimeValueObject.fromJSDate(futureDate);
       user.requestPasswordReset(token, expiresAt);
 
       const newPasswordHash = PasswordHash.create('$2b$10$newhash');

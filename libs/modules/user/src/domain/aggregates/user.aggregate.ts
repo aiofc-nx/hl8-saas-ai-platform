@@ -75,11 +75,12 @@ export class User extends AggregateRootBase<AggregateId> {
   private constructor(props: AggregateRootProps<AggregateId>) {
     super(props);
     // 这些属性将在 create 或 reconstitute 中初始化
-    this._email = Email.create('');
-    this._username = Username.create('');
-    this._passwordHash = PasswordHash.create('');
+    // 使用 ! 断言，因为这些属性会在 create 方法中立即被赋值
+    this._email = null!;
+    this._username = null!;
+    this._passwordHash = null!;
     this._status = UserStatus.pendingActivation();
-    this._profile = UserProfile.create({ name: '', gender: '' });
+    this._profile = null!;
     this._isEmailVerified = false;
     this._emailVerifiedAt = null;
     this._passwordResetToken = null;

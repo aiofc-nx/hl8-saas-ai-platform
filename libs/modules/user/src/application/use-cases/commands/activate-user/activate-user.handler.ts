@@ -1,4 +1,4 @@
-import { CaslCommandHandler } from '@hl8/application-base';
+import { CommandHandler } from '@hl8/application-base';
 import { AggregateId, TenantId } from '@hl8/domain-base';
 import { Injectable } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
@@ -16,19 +16,15 @@ import {
  * @description 激活用户命令处理器。
  */
 @Injectable()
-export class ActivateUserHandler extends CaslCommandHandler<
+export class ActivateUserHandler extends CommandHandler<
   ActivateUserCommand,
   ActivateUserResult
 > {
   public constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly abilityCoordinator: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected readonly auditCoordinator: any,
     private readonly userRepository: UserRepository,
     private readonly eventBus: EventBus,
   ) {
-    super(abilityCoordinator, auditCoordinator);
+    super();
   }
 
   /**
@@ -50,7 +46,7 @@ export class ActivateUserHandler extends CaslCommandHandler<
     }
 
     // 校验租户范围
-    this.assertTenantScope(command, user.tenantId.toString());
+    this.assertTenantScope(command.context, user.tenantId.toString());
 
     // 激活用户
     user.activate(command.context.userId);
