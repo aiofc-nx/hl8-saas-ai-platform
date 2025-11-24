@@ -16,7 +16,7 @@ const config: Config = {
     '^@hl8/mikro-orm-nestjs$': '<rootDir>/../../mikro-orm-nestjs/src/index.ts',
     '^@hl8/async-storage$': '<rootDir>/../../async-storage/src/index.ts',
     '^@hl8/swagger$': '<rootDir>/../../common/swagger/src/index.ts',
-    '^@hl8/multi-tenancy$': '<rootDir>/../../multi-tenancy/src/index.ts',
+    '^@hl8/data-isolation$': '<rootDir>/../../libs/data-isolation/src/index.ts',
   },
   transform: {
     '^.+\\.ts$': [

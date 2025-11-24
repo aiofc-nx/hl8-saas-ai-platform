@@ -8,14 +8,14 @@ import type {
   FindOneOptions,
 } from '@mikro-orm/core';
 import { EntityRepository } from '@mikro-orm/core';
-import { TenantContextExecutor } from '../tenant-context.executor.js';
+import { IsolationContextExecutor } from '../isolation-context.executor.js';
 
 type LoggerService = InstanceType<typeof Logger>;
 
 /**
- * @description 租户感知仓储基类，自动在查询条件中追加 `tenantId`
+ * @description 数据隔离感知仓储基类，自动在查询条件中追加隔离字段（如 tenantId）
  */
-export abstract class BaseTenantRepository<
+export abstract class BaseIsolatedRepository<
   ENTITY extends { tenantId: string },
 > {
   protected readonly repository: EntityRepository<ENTITY>;
@@ -23,7 +23,7 @@ export abstract class BaseTenantRepository<
   protected constructor(
     protected readonly em: EntityManager,
     entityName: EntityName<ENTITY>,
-    protected readonly tenantContextExecutor: TenantContextExecutor,
+    protected readonly isolationContextExecutor: IsolationContextExecutor,
     protected readonly logger: LoggerService,
   ) {
     this.repository = em.getRepository(entityName);
@@ -34,7 +34,7 @@ export abstract class BaseTenantRepository<
     options?: FindOneOptions<ENTITY>,
   ): Promise<ENTITY | null> {
     return this.repository.findOne(
-      this.mergeTenantFilter(where),
+      this.mergeIsolationFilter(where),
       options,
     ) as Promise<ENTITY | null>;
   }
@@ -43,11 +43,11 @@ export abstract class BaseTenantRepository<
     where: FilterQuery<ENTITY>,
     data: EntityData<ENTITY>,
   ): Promise<number> {
-    return this.repository.nativeUpdate(this.mergeTenantFilter(where), data);
+    return this.repository.nativeUpdate(this.mergeIsolationFilter(where), data);
   }
 
   protected async nativeDelete(where: FilterQuery<ENTITY>): Promise<number> {
-    return this.repository.nativeDelete(this.mergeTenantFilter(where));
+    return this.repository.nativeDelete(this.mergeIsolationFilter(where));
   }
 
   protected getEntityManager(): EntityManager {
@@ -58,8 +58,10 @@ export abstract class BaseTenantRepository<
     return this.repository;
   }
 
-  private mergeTenantFilter(where?: FilterQuery<ENTITY>): FilterQuery<ENTITY> {
-    const tenantId = this.tenantContextExecutor.getTenantIdOrFail();
+  private mergeIsolationFilter(
+    where?: FilterQuery<ENTITY>,
+  ): FilterQuery<ENTITY> {
+    const tenantId = this.isolationContextExecutor.getTenantIdOrFail();
     if (where) {
       const candidate = (where as Record<string, unknown>).tenantId;
       if (
@@ -67,11 +69,11 @@ export abstract class BaseTenantRepository<
         candidate !== null &&
         candidate !== tenantId
       ) {
-        this.logger.error('检测到跨租户访问，已阻止执行', undefined, {
+        this.logger.error('检测到跨隔离边界访问，已阻止执行', undefined, {
           expectedTenantId: tenantId,
           incomingTenantId: candidate,
         });
-        throw new GeneralForbiddenException('禁止跨租户访问');
+        throw new GeneralForbiddenException('禁止跨隔离边界访问');
       }
     }
 
@@ -80,7 +82,7 @@ export abstract class BaseTenantRepository<
       tenantId,
     };
 
-    this.logger.debug?.('已自动注入租户过滤条件', {
+    this.logger.debug?.('已自动注入数据隔离过滤条件', {
       tenantId,
       repository: this.constructor.name,
     });
@@ -88,3 +90,8 @@ export abstract class BaseTenantRepository<
     return mergedFilter as FilterQuery<ENTITY>;
   }
 }
+
+/**
+ * @deprecated 请使用 BaseIsolatedRepository
+ */
+export const BaseTenantRepository = BaseIsolatedRepository;

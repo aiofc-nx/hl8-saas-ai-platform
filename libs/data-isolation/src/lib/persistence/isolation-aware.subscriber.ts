@@ -4,14 +4,14 @@ import type { EntityName, EventArgs, EventSubscriber } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/core';
 import { InjectEntityManager } from '@mikro-orm/nestjs';
 import { Injectable, Optional } from '@nestjs/common';
-import { TenantContextExecutor } from '../tenant-context.executor.js';
+import { IsolationContextExecutor } from '../isolation-context.executor.js';
 
 type LoggerService = InstanceType<typeof Logger>;
 
 /**
- * @description 租户感知订阅器配置选项
+ * @description 数据隔离感知订阅器配置选项
  */
-export interface TenantAwareSubscriberOptions {
+export interface IsolationAwareSubscriberOptions {
   /**
    * @description 数据库连接名称，默认为 'postgres'
    */
@@ -19,20 +19,20 @@ export interface TenantAwareSubscriberOptions {
 }
 
 /**
- * @description MikroORM 订阅器：在实体持久化前自动写入租户信息
+ * @description MikroORM 订阅器：在实体持久化前自动写入隔离信息
  */
 @Injectable()
-export class TenantAwareSubscriber
+export class IsolationAwareSubscriber
   implements
     EventSubscriber<{
       tenantId?: string;
     }>
 {
   constructor(
-    private readonly tenantExecutor: TenantContextExecutor,
+    private readonly isolationContextExecutor: IsolationContextExecutor,
     private readonly logger: LoggerService,
     @InjectEntityManager('postgres') entityManager: EntityManager,
-    @Optional() private readonly options?: TenantAwareSubscriberOptions,
+    @Optional() private readonly options?: IsolationAwareSubscriberOptions,
   ) {
     entityManager.getEventManager().registerSubscriber(this);
   }
@@ -42,14 +42,14 @@ export class TenantAwareSubscriber
   }
 
   /**
-   * @description 在实体创建前自动写入租户信息或校验租户一致性
+   * @description 在实体创建前自动写入隔离信息或校验隔离一致性
    * @param args 实体创建事件参数
    * @throws GeneralForbiddenException 当实体租户 ID 与上下文不一致时抛出
    */
   public async beforeCreate(
     args: EventArgs<{ tenantId?: string }>,
   ): Promise<void> {
-    const tenantId = this.tenantExecutor.getTenantIdOrFail();
+    const tenantId = this.isolationContextExecutor.getTenantIdOrFail();
 
     if (!args.entity.tenantId) {
       args.entity.tenantId = tenantId;
@@ -66,28 +66,38 @@ export class TenantAwareSubscriber
         expectedTenantId: tenantId,
         incomingTenantId: args.entity.tenantId,
       });
-      throw new GeneralForbiddenException('禁止跨租户写入');
+      throw new GeneralForbiddenException('禁止跨隔离边界写入');
     }
   }
 
   /**
-   * @description 在实体更新前校验租户一致性
+   * @description 在实体更新前校验隔离一致性
    * @param args 实体更新事件参数
    * @throws GeneralForbiddenException 当实体租户 ID 与上下文不一致时抛出
    */
   public async beforeUpdate(
     args: EventArgs<{ tenantId?: string }>,
   ): Promise<void> {
-    const tenantId = this.tenantExecutor.getTenantIdOrFail();
+    const tenantId = this.isolationContextExecutor.getTenantIdOrFail();
     const updatingTenantId = args.entity.tenantId;
 
     if (updatingTenantId && updatingTenantId !== tenantId) {
-      this.logger.error('检测到跨租户更新尝试', undefined, {
+      this.logger.error('检测到跨隔离边界更新尝试', undefined, {
         entity: args.entity.constructor.name,
         expectedTenantId: tenantId,
         incomingTenantId: updatingTenantId,
       });
-      throw new GeneralForbiddenException('禁止跨租户访问');
+      throw new GeneralForbiddenException('禁止跨隔离边界访问');
     }
   }
 }
+
+/**
+ * @deprecated 请使用 IsolationAwareSubscriber
+ */
+export const TenantAwareSubscriber = IsolationAwareSubscriber;
+
+/**
+ * @deprecated 请使用 IsolationAwareSubscriberOptions
+ */
+export type TenantAwareSubscriberOptions = IsolationAwareSubscriberOptions;

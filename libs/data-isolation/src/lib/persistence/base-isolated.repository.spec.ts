@@ -9,8 +9,8 @@ import type {
   FilterQuery,
   FindOneOptions,
 } from '@mikro-orm/core';
-import { TenantContextExecutor } from '../tenant-context.executor.js';
-import { BaseTenantRepository } from './base-tenant.repository.js';
+import { IsolationContextExecutor } from '../isolation-context.executor.js';
+import { BaseIsolatedRepository } from './base-isolated.repository.js';
 
 // 测试实体接口
 interface TestEntity {
@@ -20,7 +20,16 @@ interface TestEntity {
 }
 
 // 测试仓储类
-class TestTenantRepository extends BaseTenantRepository<TestEntity> {
+class TestTenantRepository extends BaseIsolatedRepository<TestEntity> {
+  constructor(
+    em: EntityManager,
+    entityName: EntityName<TestEntity>,
+    isolationContextExecutor: IsolationContextExecutor,
+    logger: InstanceType<typeof Logger>,
+  ) {
+    super(em, entityName, isolationContextExecutor, logger);
+  }
+
   public async findOnePublic(
     where: FilterQuery<TestEntity>,
     options?: FindOneOptions<TestEntity>,
@@ -50,11 +59,11 @@ class TestTenantRepository extends BaseTenantRepository<TestEntity> {
   }
 }
 
-describe('BaseTenantRepository', () => {
+describe('BaseIsolatedRepository', () => {
   let repository: TestTenantRepository;
   let entityManager: jest.Mocked<EntityManager>;
   let entityRepository: jest.Mocked<EntityRepository<TestEntity>>;
-  let tenantExecutor: jest.Mocked<TenantContextExecutor>;
+  let isolationContextExecutor: jest.Mocked<IsolationContextExecutor>;
   let logger: jest.Mocked<InstanceType<typeof Logger>>;
   const entityName = 'TestEntity' as EntityName<TestEntity>;
 
@@ -69,9 +78,9 @@ describe('BaseTenantRepository', () => {
       getRepository: jest.fn().mockReturnValue(entityRepository),
     } as unknown as jest.Mocked<EntityManager>;
 
-    tenantExecutor = {
+    isolationContextExecutor = {
       getTenantIdOrFail: jest.fn().mockReturnValue('tenant-123'),
-    } as unknown as jest.Mocked<TenantContextExecutor>;
+    } as unknown as jest.Mocked<IsolationContextExecutor>;
 
     logger = {
       error: jest.fn(),
@@ -85,7 +94,7 @@ describe('BaseTenantRepository', () => {
     repository = new TestTenantRepository(
       entityManager,
       entityName,
-      tenantExecutor,
+      isolationContextExecutor,
       logger,
     );
   });
@@ -93,7 +102,7 @@ describe('BaseTenantRepository', () => {
   describe('findOne', () => {
     it('应自动注入租户过滤条件', async () => {
       const where = { name: 'test' };
-      const options = { populate: ['relation'] };
+      const options = { populate: ['relation'] as any };
       const expectedEntity = {
         id: '1',
         tenantId: 'tenant-123',
@@ -106,10 +115,10 @@ describe('BaseTenantRepository', () => {
 
       expect(result).toEqual(expectedEntity);
       expect(entityRepository.findOne).toHaveBeenCalledWith(
-        { ...where, tenantId: 'tenant-123' },
+        { ...where, tenantId: 'tenant-123' } as any,
         options,
       );
-      expect(tenantExecutor.getTenantIdOrFail).toHaveBeenCalled();
+      expect(isolationContextExecutor.getTenantIdOrFail).toHaveBeenCalled();
     });
 
     it('当 where 条件为空时应只注入租户 ID', async () => {
@@ -139,7 +148,7 @@ describe('BaseTenantRepository', () => {
 
       entityRepository.findOne.mockResolvedValue(expectedEntity as TestEntity);
 
-      const result = await repository.findOnePublic(undefined);
+      const result = await repository.findOnePublic(undefined as any);
 
       expect(result).toEqual(expectedEntity);
       expect(entityRepository.findOne).toHaveBeenCalledWith(
@@ -162,7 +171,7 @@ describe('BaseTenantRepository', () => {
 
       expect(result).toEqual(expectedEntity);
       expect(entityRepository.findOne).toHaveBeenCalledWith(
-        { ...where, tenantId: 'tenant-123' },
+        { ...where, tenantId: 'tenant-123' } as any,
         undefined,
       );
     });
@@ -174,7 +183,7 @@ describe('BaseTenantRepository', () => {
         GeneralForbiddenException,
       );
       expect(logger.error).toHaveBeenCalledWith(
-        '检测到跨租户访问，已阻止执行',
+        '检测到跨隔离边界访问，已阻止执行',
         undefined,
         {
           expectedTenantId: 'tenant-123',
@@ -209,7 +218,7 @@ describe('BaseTenantRepository', () => {
 
       await repository.findOnePublic(where);
 
-      expect(logger.debug).toHaveBeenCalledWith('已自动注入租户过滤条件', {
+      expect(logger.debug).toHaveBeenCalledWith('已自动注入数据隔离过滤条件', {
         tenantId: 'tenant-123',
         repository: 'TestTenantRepository',
       });
@@ -227,8 +236,8 @@ describe('BaseTenantRepository', () => {
 
       expect(result).toBe(1);
       expect(entityRepository.nativeUpdate).toHaveBeenCalledWith(
-        { ...where, tenantId: 'tenant-123' },
-        data,
+        { ...where, tenantId: 'tenant-123' } as any,
+        data as any,
       );
     });
 
@@ -254,7 +263,7 @@ describe('BaseTenantRepository', () => {
       expect(entityRepository.nativeDelete).toHaveBeenCalledWith({
         ...where,
         tenantId: 'tenant-123',
-      });
+      } as any);
     });
 
     it('当检测到跨租户删除时应抛出异常', () => {

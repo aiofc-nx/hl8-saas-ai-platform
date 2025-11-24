@@ -1,7 +1,7 @@
 {
-  "name": "@hl8/multi-tenancy",
+  "name": "@hl8/data-isolation",
   "version": "0.1.0",
-  "description": "多租户上下文与隔离支撑模块，封装 CLS、拦截器与仓储基类",
+  "description": "多层级数据隔离支撑模块，支持租户、组织、部门层级的数据隔离，封装 CLS、拦截器与仓储基类",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,6 +21,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@hl8/application-base": "workspace:*",
     "@hl8/config": "workspace:*",
     "@hl8/exceptions": "workspace:*",
     "@hl8/logger": "workspace:*",

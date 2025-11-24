@@ -3,8 +3,8 @@ import { Logger } from '@hl8/logger';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { EventArgs } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/core';
-import { TenantContextExecutor } from '../tenant-context.executor.js';
-import { TenantAwareSubscriber } from './tenant-aware.subscriber.js';
+import { IsolationContextExecutor } from '../isolation-context.executor.js';
+import { IsolationAwareSubscriber } from './isolation-aware.subscriber.js';
 
 // 测试实体接口
 interface TestEntity {
@@ -12,10 +12,10 @@ interface TestEntity {
   name: string;
 }
 
-describe('TenantAwareSubscriber', () => {
-  let subscriber: TenantAwareSubscriber;
+describe('IsolationAwareSubscriber', () => {
+  let subscriber: IsolationAwareSubscriber;
   let entityManager: jest.Mocked<EntityManager>;
-  let tenantExecutor: jest.Mocked<TenantContextExecutor>;
+  let isolationContextExecutor: jest.Mocked<IsolationContextExecutor>;
   let logger: jest.Mocked<InstanceType<typeof Logger>>;
   let eventManager: { registerSubscriber: jest.Mock };
 
@@ -28,9 +28,9 @@ describe('TenantAwareSubscriber', () => {
       getEventManager: jest.fn().mockReturnValue(eventManager),
     } as unknown as jest.Mocked<EntityManager>;
 
-    tenantExecutor = {
+    isolationContextExecutor = {
       getTenantIdOrFail: jest.fn().mockReturnValue('tenant-123'),
-    } as unknown as jest.Mocked<TenantContextExecutor>;
+    } as unknown as jest.Mocked<IsolationContextExecutor>;
 
     logger = {
       error: jest.fn(),
@@ -41,8 +41,8 @@ describe('TenantAwareSubscriber', () => {
       fatal: jest.fn(),
     } as unknown as jest.Mocked<InstanceType<typeof Logger>>;
 
-    subscriber = new TenantAwareSubscriber(
-      tenantExecutor,
+    subscriber = new IsolationAwareSubscriber(
+      isolationContextExecutor,
       logger,
       entityManager,
     );
@@ -68,7 +68,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeCreate(args);
 
@@ -87,7 +88,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeCreate(args);
 
@@ -103,7 +105,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await expect(subscriber.beforeCreate(args)).rejects.toThrow(
         GeneralForbiddenException,
@@ -127,7 +130,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeCreate(args);
 
@@ -142,7 +146,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeCreate(args);
 
@@ -156,11 +161,12 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeUpdate(args);
 
-      expect(tenantExecutor.getTenantIdOrFail).toHaveBeenCalled();
+      expect(isolationContextExecutor.getTenantIdOrFail).toHaveBeenCalled();
     });
 
     it('当实体 tenantId 与上下文一致时应通过校验', async () => {
@@ -171,7 +177,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeUpdate(args);
 
@@ -186,13 +193,14 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await expect(subscriber.beforeUpdate(args)).rejects.toThrow(
         GeneralForbiddenException,
       );
       expect(logger.error).toHaveBeenCalledWith(
-        '检测到跨租户更新尝试',
+        '检测到跨隔离边界更新尝试',
         undefined,
         {
           entity: 'Object',
@@ -210,7 +218,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeUpdate(args);
 
@@ -225,7 +234,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await subscriber.beforeUpdate(args);
 
@@ -236,7 +246,7 @@ describe('TenantAwareSubscriber', () => {
   describe('边界情况', () => {
     it('当 getTenantIdOrFail 抛出异常时应传播异常', async () => {
       const error = new Error('缺少租户上下文');
-      tenantExecutor.getTenantIdOrFail.mockImplementation(() => {
+      isolationContextExecutor.getTenantIdOrFail.mockImplementation(() => {
         throw error;
       });
 
@@ -244,7 +254,8 @@ describe('TenantAwareSubscriber', () => {
       const args = {
         entity,
         em: entityManager,
-      } as EventArgs<TestEntity>;
+        meta: {} as any,
+      } as unknown as EventArgs<{ tenantId?: string }>;
 
       await expect(subscriber.beforeCreate(args)).rejects.toThrow(
         '缺少租户上下文',

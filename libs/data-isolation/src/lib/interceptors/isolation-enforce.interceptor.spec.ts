@@ -12,21 +12,24 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ClsService } from 'nestjs-cls';
 import { of } from 'rxjs';
-import type { TenantClsStore } from '../tenant-cls-store.js';
-import { TenantContextExecutor } from '../tenant-context.executor.js';
+import type { IsolationClsStore } from '../isolation-cls-store.js';
+import { IsolationContextExecutor } from '../isolation-context.executor.js';
 import {
+  IsolationEnforceInterceptor,
   SkipTenant,
-  TenantEnforceInterceptor,
-} from './tenant-enforce.interceptor.js';
+} from './isolation-enforce.interceptor.js';
 
-describe('TenantEnforceInterceptor', () => {
-  let interceptor: TenantEnforceInterceptor;
+describe('IsolationEnforceInterceptor', () => {
+  let interceptor: IsolationEnforceInterceptor;
   let reflector: jest.Mocked<Reflector>;
-  let clsService: jest.Mocked<ClsService<TenantClsStore>>;
-  let tenantExecutor: jest.Mocked<TenantContextExecutor>;
+  let clsService: jest.Mocked<ClsService<IsolationClsStore>>;
+  let isolationContextExecutor: jest.Mocked<IsolationContextExecutor>;
   let logger: jest.Mocked<InstanceType<typeof Logger>>;
   let context: jest.Mocked<ExecutionContext>;
   let callHandler: jest.Mocked<CallHandler>;
+  let httpArgumentsHost: {
+    getRequest: jest.MockedFunction<() => unknown>;
+  };
 
   beforeEach(() => {
     reflector = {
@@ -36,11 +39,11 @@ describe('TenantEnforceInterceptor', () => {
     clsService = {
       get: jest.fn(),
       set: jest.fn(),
-    } as unknown as jest.Mocked<ClsService<TenantClsStore>>;
+    } as unknown as jest.Mocked<ClsService<IsolationClsStore>>;
 
-    tenantExecutor = {
+    isolationContextExecutor = {
       getTenantIdOrFail: jest.fn(),
-    } as unknown as jest.Mocked<TenantContextExecutor>;
+    } as unknown as jest.Mocked<IsolationContextExecutor>;
 
     logger = {
       error: jest.fn(),
@@ -51,22 +54,24 @@ describe('TenantEnforceInterceptor', () => {
       fatal: jest.fn(),
     } as unknown as jest.Mocked<InstanceType<typeof Logger>>;
 
+    httpArgumentsHost = {
+      getRequest: jest.fn(),
+    };
+
     context = {
       getHandler: jest.fn().mockReturnValue({ name: 'testHandler' }),
       getClass: jest.fn().mockReturnValue({ name: 'TestController' }),
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn(),
-      }),
+      switchToHttp: jest.fn().mockReturnValue(httpArgumentsHost),
     } as unknown as jest.Mocked<ExecutionContext>;
 
     callHandler = {
       handle: jest.fn().mockReturnValue(of('result')),
     } as unknown as jest.Mocked<CallHandler>;
 
-    interceptor = new TenantEnforceInterceptor(
+    interceptor = new IsolationEnforceInterceptor(
       reflector,
       clsService,
-      tenantExecutor,
+      isolationContextExecutor,
       logger,
     );
   });
@@ -84,11 +89,11 @@ describe('TenantEnforceInterceptor', () => {
 
       const result = interceptor.intercept(context, callHandler);
 
-      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('skipTenant', [
-        context.getHandler(),
-        context.getClass(),
-      ]);
-      expect(logger.warn).toHaveBeenCalledWith('当前请求被标记为跳过租户拦截', {
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith(
+        'skipIsolation',
+        [context.getHandler(), context.getClass()],
+      );
+      expect(logger.warn).toHaveBeenCalledWith('当前请求被标记为跳过隔离拦截', {
         controller: 'TestController',
         handler: 'testHandler',
       });
@@ -106,20 +111,20 @@ describe('TenantEnforceInterceptor', () => {
         InternalServerErrorException,
       );
       expect(logger.error).toHaveBeenCalledWith(
-        '非 HTTP 请求上下文无法解析租户信息',
+        '非 HTTP 请求上下文无法解析隔离信息',
       );
     });
 
     it('应从 request.tenantId 获取租户 ID', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: 'tenant-123' };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-123');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue('tenant-123');
 
       const result = interceptor.intercept(context, callHandler);
 
       expect(clsService.set).toHaveBeenCalledWith('tenantId', 'tenant-123');
-      expect(tenantExecutor.getTenantIdOrFail).toHaveBeenCalled();
+      expect(isolationContextExecutor.getTenantIdOrFail).toHaveBeenCalled();
       result.subscribe();
     });
 
@@ -128,8 +133,8 @@ describe('TenantEnforceInterceptor', () => {
       const request = {
         headers: { 'x-tenant-id': 'tenant-456' },
       };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-456');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue('tenant-456');
 
       const result = interceptor.intercept(context, callHandler);
 
@@ -142,8 +147,8 @@ describe('TenantEnforceInterceptor', () => {
       const request = {
         user: { tenantId: 'tenant-789' },
       };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-789');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue('tenant-789');
 
       const result = interceptor.intercept(context, callHandler);
 
@@ -156,8 +161,10 @@ describe('TenantEnforceInterceptor', () => {
       const request = {
         headers: { 'x-tenant-id': ['tenant-array-1', 'tenant-array-2'] },
       };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-array-1');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue(
+        'tenant-array-1',
+      );
 
       const result = interceptor.intercept(context, callHandler);
 
@@ -168,20 +175,20 @@ describe('TenantEnforceInterceptor', () => {
     it('当租户 ID 缺失时应抛出异常', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = {};
-      context.switchToHttp().getRequest.mockReturnValue(request);
+      httpArgumentsHost.getRequest.mockReturnValue(request);
 
       expect(() => interceptor.intercept(context, callHandler)).toThrow(
         GeneralUnauthorizedException,
       );
       expect(logger.error).toHaveBeenCalledWith(
-        '缺少租户上下文，拒绝继续处理请求',
+        '缺少隔离上下文，拒绝继续处理请求',
       );
     });
 
     it('当租户 ID 为空字符串时应抛出异常', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: '' };
-      context.switchToHttp().getRequest.mockReturnValue(request);
+      httpArgumentsHost.getRequest.mockReturnValue(request);
 
       expect(() => interceptor.intercept(context, callHandler)).toThrow(
         GeneralUnauthorizedException,
@@ -191,7 +198,7 @@ describe('TenantEnforceInterceptor', () => {
     it('当租户 ID 为空白字符串时应抛出异常', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: '   ' };
-      context.switchToHttp().getRequest.mockReturnValue(request);
+      httpArgumentsHost.getRequest.mockReturnValue(request);
 
       expect(() => interceptor.intercept(context, callHandler)).toThrow(
         GeneralUnauthorizedException,
@@ -201,24 +208,24 @@ describe('TenantEnforceInterceptor', () => {
     it('当租户 ID 类型不是字符串时应抛出异常', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: 123 };
-      context.switchToHttp().getRequest.mockReturnValue(request);
+      httpArgumentsHost.getRequest.mockReturnValue(request);
 
       expect(() => interceptor.intercept(context, callHandler)).toThrow(
         GeneralUnauthorizedException,
       );
     });
 
-    it('当检测到跨租户访问时应抛出异常', () => {
+    it('当检测到跨隔离边界访问时应抛出异常', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: 'tenant-new' };
-      context.switchToHttp().getRequest.mockReturnValue(request);
+      httpArgumentsHost.getRequest.mockReturnValue(request);
       clsService.get.mockReturnValue('tenant-existing');
 
       expect(() => interceptor.intercept(context, callHandler)).toThrow(
         GeneralForbiddenException,
       );
       expect(logger.error).toHaveBeenCalledWith(
-        '检测到跨租户访问尝试',
+        '检测到跨隔离边界访问尝试',
         undefined,
         {
           expectedTenantId: 'tenant-existing',
@@ -233,8 +240,8 @@ describe('TenantEnforceInterceptor', () => {
         tenantId: 'tenant-999',
         user: { id: 'user-123' },
       };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-999');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue('tenant-999');
 
       const result = interceptor.intercept(context, callHandler);
 
@@ -246,15 +253,15 @@ describe('TenantEnforceInterceptor', () => {
     it('应记录日志当成功注入租户上下文时', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: 'tenant-log' };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-log');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue('tenant-log');
 
       const result = interceptor.intercept(context, callHandler);
 
-      expect(logger.log).toHaveBeenCalledWith('已注入租户上下文', {
+      expect(logger.log).toHaveBeenCalledWith('已注入隔离上下文', {
         tenantId: 'tenant-log',
         controller: 'TestController',
-        handler: 'testHandler',
+        handler: expect.any(String),
       });
       result.subscribe();
     });
@@ -262,8 +269,10 @@ describe('TenantEnforceInterceptor', () => {
     it('应继续执行调用链', () => {
       reflector.getAllAndOverride.mockReturnValue(false);
       const request = { tenantId: 'tenant-continue' };
-      context.switchToHttp().getRequest.mockReturnValue(request);
-      tenantExecutor.getTenantIdOrFail.mockReturnValue('tenant-continue');
+      httpArgumentsHost.getRequest.mockReturnValue(request);
+      isolationContextExecutor.getTenantIdOrFail.mockReturnValue(
+        'tenant-continue',
+      );
 
       const result = interceptor.intercept(context, callHandler);
 

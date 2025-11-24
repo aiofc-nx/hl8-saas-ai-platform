@@ -2,6 +2,7 @@ import {
   GeneralBadRequestException,
   GeneralInternalServerException,
   MissingConfigurationForFeatureException,
+  OptimisticLockException,
 } from '@hl8/exceptions';
 import { Logger } from '@hl8/logger';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
@@ -57,14 +58,21 @@ describe('CacheConsistencyService', () => {
     using: redlockUsing,
   } as unknown as Redlock;
 
-  const loggerStub = {
+  const childLoggerStub = {
     log: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
     verbose: jest.fn(),
   };
-  loggerStub.child = jest.fn().mockReturnValue(loggerStub);
+  const loggerStub = {
+    log: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    verbose: jest.fn(),
+    child: jest.fn().mockReturnValue(childLoggerStub),
+  };
   const typedLoggerStub = loggerStub as unknown as Logger;
 
   const moduleRef = {
@@ -197,7 +205,7 @@ describe('CacheConsistencyService', () => {
         keys: ['k1'],
         reason: 'test',
       }),
-    ).rejects.toThrow('缓存锁正在使用中，请稍后重试');
+    ).rejects.toThrow(OptimisticLockException);
 
     expect(notificationService.publishLockContention).toHaveBeenCalledWith({
       domain: 'tenant-config',
@@ -221,7 +229,7 @@ describe('CacheConsistencyService', () => {
         notificationService,
       );
 
-      expect(loggerStub.warn).toHaveBeenCalledWith(
+      expect(childLoggerStub.warn).toHaveBeenCalledWith(
         '分布式锁服务未注册，已降级为内存锁实现',
       );
       expect(newService).toBeInstanceOf(CacheConsistencyService);
@@ -236,7 +244,7 @@ describe('CacheConsistencyService', () => {
         notificationService,
       );
 
-      expect(loggerStub.warn).toHaveBeenCalledWith(
+      expect(childLoggerStub.warn).toHaveBeenCalledWith(
         '分布式锁服务未注册，已降级为内存锁实现',
       );
       expect(newService).toBeInstanceOf(CacheConsistencyService);
@@ -257,7 +265,7 @@ describe('CacheConsistencyService', () => {
         notificationService,
       );
 
-      expect(loggerStub.warn).toHaveBeenCalledWith(
+      expect(childLoggerStub.warn).toHaveBeenCalledWith(
         '分布式锁服务未注册，已降级为内存锁实现',
       );
       expect(newService).toBeInstanceOf(CacheConsistencyService);
@@ -310,7 +318,9 @@ describe('CacheConsistencyService', () => {
 
     it('应该在 Redis del 操作失败时抛出异常', async () => {
       const failingRedisClient = {
-        del: jest.fn().mockRejectedValue(new Error('Redis del failed')),
+        del: jest.fn(async () => {
+          throw new Error('Redis del failed');
+        }),
       } as unknown as Redis;
 
       const failingProvider = {
@@ -385,7 +395,7 @@ describe('CacheConsistencyService', () => {
 
     it('应该在延迟删除中处理错误', async () => {
       const delayedRedisDel = jest
-        .fn()
+        .fn(async () => 1)
         .mockResolvedValueOnce(1)
         .mockRejectedValueOnce(new Error('Delayed delete failed'));
 
