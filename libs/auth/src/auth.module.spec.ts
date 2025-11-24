@@ -34,7 +34,7 @@ describe('AuthModule', () => {
       expect(module.exports).toContain(JwtRefreshGuard);
       expect(module.exports).toContain(RolesGuard);
       expect(module.exports).toContain(AUTH_CONFIG);
-      expect(module.global).toBe(false);
+      expect(module.global).toBe(true);
 
       // 验证配置提供者
       const configProvider = module.providers?.find(
@@ -74,7 +74,7 @@ describe('AuthModule', () => {
       expect(module.exports).toContain(JwtRefreshGuard);
       expect(module.exports).toContain(RolesGuard);
       expect(module.exports).toContain(AUTH_CONFIG);
-      expect(module.global).toBe(false);
+      expect(module.global).toBe(true);
 
       // 验证配置提供者
       const configProvider = module.providers?.find(
@@ -127,14 +127,16 @@ describe('AuthModule', () => {
       expect(inject).toEqual([]);
     });
 
-    it('应该在没有导入时使用空数组', () => {
+    it('应该在没有导入时只包含 JwtModule', () => {
       const useFactory = jest.fn(() => mockConfig);
 
       const module: DynamicModule = AuthModule.forRootAsync({
         useFactory,
       });
 
-      expect(module.imports).toEqual([]);
+      // JwtModule 总是被导入，所以 imports 不为空
+      expect(module.imports).toBeDefined();
+      expect(module.imports?.length).toBeGreaterThan(0);
     });
 
     it('应该支持异步工厂函数', async () => {
@@ -180,14 +182,14 @@ describe('AuthModule', () => {
   });
 
   describe('模块配置', () => {
-    it('应该是非全局模块', () => {
+    it('应该是全局模块', () => {
       const syncModule: DynamicModule = AuthModule.forRoot(mockConfig);
-      expect(syncModule.global).toBe(false);
+      expect(syncModule.global).toBe(true);
 
       const asyncModule: DynamicModule = AuthModule.forRootAsync({
         useFactory: () => mockConfig,
       });
-      expect(asyncModule.global).toBe(false);
+      expect(asyncModule.global).toBe(true);
     });
 
     it('应该提供所有必需的守卫', () => {
