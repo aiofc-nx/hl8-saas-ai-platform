@@ -1,43 +1,161 @@
 # @hl8/application-base
 
-`@hl8/application-base` 提供命令、查询、Saga、权限校验与审计协同的应用层基线能力，帮助业务模块在 1 个工作日内完成接入。
+`@hl8/application-base` 提供应用层基线能力，包括 CQRS 基础设施、Saga 抽象和通用的执行上下文接口。
 
 ## 核心特性
 
-- 标准化的 `SecurityContext` 与租户/组织/部门范围校验工具。
-- 基于 CASL 的命令、查询处理器基类，自动执行权限校验。
-- 审计协调器与拦截器，统一写入审计日志并复用平台日志规范。
-- Saga 抽象，支持顺序执行与补偿策略。
-- 动态模块 `ApplicationCoreModule.register()`，便于在 NestJS 中快速集成。
+- 标准化的 `CommandBase` 和 `QueryBase` 基类，提供统一的命令和查询接口
+- `CommandHandlerBase` 和 `QueryHandlerBase` 基类，简化命令和查询处理器的实现
+- 通用的 `ExecutionContext` 接口，用于传递执行上下文信息
+- Saga 抽象，支持顺序执行与补偿策略
+- 动态模块 `ApplicationCoreModule.register()`，便于在 NestJS 中快速集成 CQRS 基础设施
 
-## 使用场景
+## 架构说明
 
-### 何时使用 ApplicationCoreModule（聚合模块）
+**权限和审计能力已迁移到 `@hl8/auth`**
 
-适合以下场景：
+权限校验和审计能力已从 `@hl8/application-base` 迁移到 `@hl8/auth`。如需使用这些功能，请：
 
-- ✅ **标准应用**：需要完整的权限校验和审计能力
-- ✅ **快速接入**：希望在 1 个工作日内完成接入
-- ✅ **团队规范**：遵循平台统一的应用层基线能力
+1. 使用 `@hl8/auth` 中的 `AuthApplicationModule` 注册权限和审计组件
+2. 使用 `@hl8/auth` 中的 `ExecutionContext`、`CaslAbilityGuard`、`AuditCoordinator` 等组件
 
-### 何时独立注册组件
+`@hl8/application-base` 现在专注于提供：
 
-适合以下场景：
-
-- ✅ **定制需求**：只需要部分能力（如仅权限校验或仅审计）
-- ✅ **性能优化**：需要精确控制组件的注册和初始化
-- ✅ **灵活配置**：需要自定义拦截器的注册顺序或配置
+- CQRS 基础设施（命令、查询、事件处理）
+- Saga 模式支持
+- 通用的执行上下文接口
 
 ## 快速开始
 
-### 方式 1：使用聚合模块（推荐）
-
-注册所有组件：
+### 注册 CQRS 基础设施
 
 ```ts
+import { ApplicationCoreModule } from '@hl8/application-base';
+
+@Module({
+  imports: [ApplicationCoreModule.register()],
+})
+export class AppModule {}
+```
+
+### 注册额外提供者
+
+```ts
+import { ApplicationCoreModule } from '@hl8/application-base';
+
 @Module({
   imports: [
     ApplicationCoreModule.register({
+      extraProviders: [MyCustomProvider],
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### 实现命令和查询
+
+**定义命令**：
+
+```ts
+import { CommandBase, ExecutionContext } from '@hl8/application-base';
+
+export class CreateUserCommand extends CommandBase<void> {
+  public constructor(
+    context: ExecutionContext,
+    public readonly email: string,
+    public readonly username: string,
+  ) {
+    super(context);
+  }
+
+  public auditPayload(): Record<string, unknown> {
+    return {
+      email: this.email,
+      username: this.username,
+    };
+  }
+}
+```
+
+**实现命令处理器**：
+
+```ts
+import { CommandHandlerBase } from '@hl8/application-base';
+import { Injectable } from '@nestjs/common';
+import { CommandHandler } from '@nestjs/cqrs';
+
+@Injectable()
+@CommandHandler(CreateUserCommand)
+export class CreateUserHandler extends CommandHandlerBase<
+  CreateUserCommand,
+  void
+> {
+  protected async handle(command: CreateUserCommand): Promise<void> {
+    // 实现业务逻辑
+    // 可以使用 command.context 访问执行上下文
+    this.assertTenantScope(command.context, 'tenant-id');
+  }
+}
+```
+
+**定义查询**：
+
+```ts
+import { QueryBase, ExecutionContext } from '@hl8/application-base';
+
+export class GetUserQuery extends QueryBase<UserDTO | null> {
+  public constructor(
+    context: ExecutionContext,
+    public readonly userId: string,
+  ) {
+    super(context);
+  }
+
+  public auditPayload(): Record<string, unknown> {
+    return {
+      userId: this.userId,
+    };
+  }
+}
+```
+
+**实现查询处理器**：
+
+```ts
+import { QueryHandlerBase } from '@hl8/application-base';
+import { Injectable } from '@nestjs/common';
+import { QueryHandler } from '@nestjs/cqrs';
+
+@Injectable()
+@QueryHandler(GetUserQuery)
+export class GetUserHandler extends QueryHandlerBase<
+  GetUserQuery,
+  UserDTO | null
+> {
+  protected async handle(query: GetUserQuery): Promise<UserDTO | null> {
+    // 实现查询逻辑
+    // 可以使用 query.context 访问执行上下文
+    this.assertTenantScope(query.context, 'tenant-id');
+    return null;
+  }
+}
+```
+
+## 与 @hl8/auth 集成
+
+如果需要权限校验和审计功能，请同时使用 `@hl8/auth`：
+
+```ts
+import { ApplicationCoreModule } from '@hl8/application-base';
+import { AuthApplicationModule } from '@hl8/auth';
+
+@Module({
+  imports: [
+    // 注册 CQRS 基础设施
+    ApplicationCoreModule.register(),
+    // 注册权限和审计组件
+    AuthApplicationModule.register({
       abilityService: {
         provide: ABILITY_SERVICE_TOKEN,
         useClass: AbilityServiceImpl,
@@ -51,158 +169,21 @@
 })
 export class AppModule {}
 ```
-
-### 方式 2：选择性注册组件
-
-只注册权限相关组件：
-
-```ts
-@Module({
-  imports: [
-    ApplicationCoreModule.register({
-      abilityService: {
-        provide: ABILITY_SERVICE_TOKEN,
-        useClass: AbilityServiceImpl,
-      },
-      enableAudit: false, // 禁用审计相关组件
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-只注册审计相关组件：
-
-```ts
-@Module({
-  imports: [
-    ApplicationCoreModule.register({
-      auditService: {
-        provide: AUDIT_SERVICE_TOKEN,
-        useClass: AuditServiceImpl,
-      },
-      enableAbility: false, // 禁用权限相关组件
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-### 方式 3：独立注册组件
-
-如果聚合模块无法满足需求，可以独立注册组件：
-
-```ts
-import { CqrsModule } from '@nestjs/cqrs';
-import {
-  CaslAbilityCoordinator,
-  AuditCoordinator,
-  AuditCommandInterceptor,
-  AuditQueryInterceptor,
-  ABILITY_SERVICE_TOKEN,
-  AUDIT_SERVICE_TOKEN,
-} from '@hl8/application-base';
-
-@Module({
-  imports: [CqrsModule],
-  providers: [
-    // 只注册权限相关组件
-    CaslAbilityCoordinator,
-    { provide: ABILITY_SERVICE_TOKEN, useClass: AbilityServiceImpl },
-
-    // 只注册审计相关组件（可选）
-    // AuditCoordinator,
-    // AuditCommandInterceptor,
-    // AuditQueryInterceptor,
-    // { provide: AUDIT_SERVICE_TOKEN, useClass: AuditServiceImpl },
-  ],
-  exports: [
-    CaslAbilityCoordinator,
-    ABILITY_SERVICE_TOKEN,
-    // AuditCoordinator,
-    // AuditCommandInterceptor,
-    // AuditQueryInterceptor,
-    // AUDIT_SERVICE_TOKEN,
-  ],
-})
-export class AppModule {}
-```
-
-2. **实现命令处理器**
-
-   ```ts
-   export class AssignRoleCommand extends CaslCommandBase<void> {
-     public constructor(
-       context: SecurityContext,
-       public readonly payload: { tenantId: string; roleId: string },
-     ) {
-       super(context);
-     }
-
-     public abilityDescriptor() {
-       return { action: 'manage', subject: 'AssignRoleCommand' };
-     }
-
-     public override auditPayload() {
-       return this.payload;
-     }
-   }
-   ```
-
-3. **继承命令处理器基类**
-   ```ts
-   @CommandHandler(AssignRoleCommand)
-   export class AssignRoleCommandHandler extends CaslCommandHandler<
-     AssignRoleCommand,
-     void
-   > {
-     protected async handle(command: AssignRoleCommand): Promise<void> {
-       this.assertTenantScope(command, command.payload.tenantId);
-       // 领域逻辑...
-     }
-   }
-   ```
-
-更详细的接入示例见 `specs/002-define-application-base/quickstart.md`。
 
 ## 组件说明
 
-### 权限相关组件
+### CQRS 基础设施
 
-- **`CaslAbilityCoordinator`**：权限协调器，统一校验命令与查询执行权限
-- **`abilityService`**：权限服务，提供权限能力解析（需实现 `AbilityService` 接口）
+- **`CommandBase<T>`**：命令基类，所有命令都应继承此类
+- **`QueryBase<T>`**：查询基类，所有查询都应继承此类
+- **`CommandHandlerBase<C, R>`**：命令处理器基类，提供统一的处理接口
+- **`QueryHandlerBase<Q, R>`**：查询处理器基类，提供统一的处理接口
+- **`ExecutionContext`**：通用的执行上下文接口，包含租户、用户等信息
 
-### 审计相关组件
+### Saga 支持
 
-- **`AuditCoordinator`**：审计协调器，统一聚合审计记录
-- **`AuditCommandInterceptor`**：命令审计拦截器，自动记录命令执行
-- **`AuditQueryInterceptor`**：查询审计拦截器，自动记录查询执行
-- **`auditService`**：审计服务，提供审计记录持久化（需实现 `AuditService` 接口）
-
-### 依赖关系
-
-- `AuditCommandInterceptor` 和 `AuditQueryInterceptor` 依赖于 `AuditCoordinator`
-- 如果启用审计，必须提供 `auditService`
-- 如果启用权限，必须提供 `abilityService`
-
-## 选择指南
-
-**使用聚合模块（推荐）**：
-
-- ✅ 标准应用，需要完整的权限校验和审计能力
-- ✅ 快速接入，希望在 1 个工作日内完成
-- ✅ 遵循团队规范，使用平台统一的应用层基线能力
-
-**选择性注册组件**：
-
-- ✅ 只需要部分能力（如仅权限校验或仅审计）
-- ✅ 想要减少不必要的依赖
-
-**独立注册组件**：
-
-- ✅ 需要精确控制组件的注册和初始化顺序
-- ✅ 需要自定义拦截器的配置或行为
-- ✅ 性能优化，需要细粒度控制
+- **`BaseSaga`**：Saga 基类，支持顺序执行与补偿策略
+- **`SagaStep`**：Saga 步骤接口
 
 ## 测试
 
@@ -212,6 +193,6 @@ pnpm --filter @hl8/application-base test
 
 ## 运维核对清单
 
-- 核查 TSDoc 是否覆盖公共 API。
-- 确认命令/查询/协同器的单元测试通过，覆盖率 ≥80%。
-- 在集成测试中验证权限拒绝与审计记录链路。
+- 核查 TSDoc 是否覆盖公共 API
+- 确认命令/查询处理器的单元测试通过，覆盖率 ≥80%
+- 在集成测试中验证 CQRS 流程的正确性

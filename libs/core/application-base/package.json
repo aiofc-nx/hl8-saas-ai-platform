@@ -34,7 +34,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@casl/ability": "^6.7.3",
+    "@hl8/common": "workspace:*",
     "@hl8/exceptions": "workspace:*",
     "@nestjs/common": "11.1.9",
     "@nestjs/core": "11.1.9",
