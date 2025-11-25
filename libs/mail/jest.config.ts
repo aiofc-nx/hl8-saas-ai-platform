@@ -3,6 +3,8 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^@hl8/config$': '<rootDir>/../../libs/common/config/src/index.ts',
+    '^@repo/constants/app$': '<rootDir>/tests/__mocks__/repo-constants-app.js',
   },
   testEnvironment: 'node',
   testMatch: ['**/*.spec.ts'],
@@ -19,6 +21,17 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        tsconfig: './tsconfig.test.json',
+        diagnostics: {
+          warnOnly: true,
+          ignoreCodes: [151002],
+        },
+      },
+    ],
+    '^.+\\.js$': [
+      'ts-jest',
+      {
+        useESM: true,
         tsconfig: {
           module: 'NodeNext',
           moduleResolution: 'nodenext',
@@ -26,4 +39,8 @@ export default {
       },
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@repo|@hl8|@nestjs|@nestjs-modules|class-transformer|class-validator|reflect-metadata|nodemailer)/)',
+  ],
+  moduleFileExtensions: ['ts', 'js', 'mjs'],
 };

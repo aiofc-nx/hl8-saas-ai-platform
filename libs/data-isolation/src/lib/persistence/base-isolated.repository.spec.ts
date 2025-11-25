@@ -114,9 +114,11 @@ describe('BaseIsolatedRepository', () => {
       const result = await repository.findOnePublic(where, options);
 
       expect(result).toEqual(expectedEntity);
+      const expectedWhere = { ...where, tenantId: 'tenant-123' };
+      const expectedOptions = options;
       expect(entityRepository.findOne).toHaveBeenCalledWith(
-        { ...where, tenantId: 'tenant-123' } as any,
-        options,
+        expectedWhere as any,
+        expectedOptions as any,
       );
       expect(isolationContextExecutor.getTenantIdOrFail).toHaveBeenCalled();
     });

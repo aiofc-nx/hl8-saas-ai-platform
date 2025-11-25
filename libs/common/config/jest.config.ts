@@ -14,21 +14,30 @@ export default {
       'ts-jest',
       {
         useESM: true,
-        tsconfig: {
-          module: 'NodeNext',
-          moduleResolution: 'NodeNext',
-        },
+        tsconfig: './tsconfig.test.json',
         diagnostics: {
           warnOnly: true,
           ignoreCodes: [151002],
         },
       },
     ],
+    '^.+\\.js$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: {
+          module: 'NodeNext',
+          moduleResolution: 'nodenext',
+        },
+      },
+    ],
   },
-  moduleFileExtensions: ['ts', 'js'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@repo|@hl8|@nestjs|class-transformer|class-validator|reflect-metadata)/)',
+  ],
+  moduleFileExtensions: ['ts', 'js', 'mjs'],
   coverageDirectory: '../../../coverage/libs/config',
   testMatch: ['**/*.spec.ts'],
   collectCoverageFrom: ['**/*.(t|j)s'],
-  transformIgnorePatterns: ['node_modules/(?!(@repo)/)'],
   passWithNoTests: true,
 };

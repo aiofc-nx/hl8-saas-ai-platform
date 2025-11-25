@@ -1,14 +1,17 @@
 import { Logger } from '@hl8/logger';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from '@jest/globals';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { MailConfig } from '../interfaces/mail-config.interface.js';
 import { MAIL_CONFIG } from '../interfaces/mail-config.interface.js';
 import { MailService } from './mail.service.js';
-
-// Mock @repo/constants/app 模块
-jest.mock('@repo/constants/app', () => ({
-  APP_NAME: 'Test App',
-}));
 
 /**
  * MailService 的单元测试套件。
@@ -51,6 +54,10 @@ describe('MailService', () => {
         {
           provide: MAIL_CONFIG,
           useValue: config as MailConfig,
+        },
+        {
+          provide: Logger,
+          useValue: Logger.prototype,
         },
       ],
     }).compile();
